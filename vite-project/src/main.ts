@@ -8,7 +8,7 @@ import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight.js";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder.js";
 //import { MeshLoader } from "@babylonjs/core/Meshes/MeshLoader.js";
-import { colorPixelShader, Nullable, SceneLoader } from "@babylonjs/core";
+import { _OcclusionDataStorage, AbstractMesh, colorPixelShader, Nullable, SceneLoader, Space } from "@babylonjs/core";
 
 import { Scene } from "@babylonjs/core/scene.js";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.js";
@@ -35,12 +35,8 @@ import "@babylonjs/loaders/glTF";
 //  FragmentOutput[FragmentOutputBlock] is not connected and is not optional.
 import "@babylonjs/core/Materials/Node/Blocks";
 
-
-//import "dotenv/config"
-
 // XR ボタンを右下に表示させるために必須
 import "@babylonjs/core/Helpers/sceneHelpers";
-
 
 function getRand(from, to) {
   return from + Math.floor(Math.random() * (to - from + 1));
@@ -48,8 +44,6 @@ function getRand(from, to) {
 
 const BASE_URL = "https://cx20.github.io/gltf-test";
 
-//var chipArray = [];
-var persons: Person[] | { age: string; }[] = [];
 
 const llmchain_invoke = async (sentences_before_check: string) => {
   // OpenAIのモデルのインスタンスを作成
@@ -86,7 +80,6 @@ const llmchain_invoke = async (sentences_before_check: string) => {
   });
 };
 
-//llmchain_invoke("道路は必ず繋げてください").then(console.log);
 var PartsArray: { dispose: () => void; }[] | Mesh[] = [];
 var chipArray: {
   var1: string; id: number; type: number; col: number; row: number; posX: number; posY: number; posZ: number;
@@ -94,125 +87,70 @@ var chipArray: {
   func: () => void;
 }[] = [];
 function resetMap(scene: Scene) {
-  //alert("reset map");
   for (var i = 0; i < PartsArray.length; i++) {
     PartsArray[i].dispose();
   }
-  //配列をリセット
   PartsArray = [];
-
   generateMap(scene);
 };
 
-//var chipArray = [];
-var targetObj = {
-
-  var1: "",
-  id: 0,
-  type: 0,
-  col: 0,
-  row: 0,
-  posX: 0,
-  posY: 0,
-  posZ: 0,
-  isAvailable: false,
-  // func メソッドを登録
-  func: function () {
-    alert("world");
-  }
-
-}
-var npcs = [];
+/*
+var persons: {
+  setIsTargetAvailable(arg0: boolean): unknown;
+  getIsTargetAvailable(): boolean;
+  id: number; col: number; row: number; targetCol: number; targetRow: number; isTargetAvailable: boolean; mesh: AbstractMesh
+}[] = [];
+*/
+const persons: Person[] = [];
 
 class Person {
-  name: string;
   id: number;
   col: number;
   row: number;
   targetCol: number;
   targetRow: number;
-  isTargetAvailable : boolean;
-  constructor(name: string, id: number) {
-    this.name = name;
+  isTargetAvailable: boolean;
+  mesh: AbstractMesh | undefined;
+  constructor(id: number, col: number, row: number) {
     this.id = id;
-    this.col = 0;
-    this.row = 0;
-    this.targetCol = 0;
-    this.targetRow = 0;
+    this.col = col;
+    this.row = row;
+    this.targetCol = col;
+    this.targetRow = row;
     this.isTargetAvailable = false;
   }
-}
-
-const nps = {
-  id: 0,
-  col: 0,
-  row: 0,
-  targetMesh: Mesh,
-  targetAvailable: false,
-  targetObj: targetObj,
-  ddd: Person
-}
-
-//var chipArray = [];
-var chipObj = {
-  var1: "",
-  id: 0,
-  type: 0,
-  col: 0,
-  row: 0,
-  posX: 0,
-  posY: 0,
-  posZ: 0,
-  // func メソッドを登録
-  func: function () {
-    console.log(id);
+  setMesh(mesh: AbstractMesh) {
+    this.mesh = mesh
   }
-};
-
+  getMesh() {
+    return this.mesh;
+  }
+  setIsTargetAvailable(_boolean: boolean) {
+    this.isTargetAvailable = _boolean;
+  }
+  getIsTargetAvailable() {
+    return this.isTargetAvailable;
+  }
+}
 
 function createNPC(scene: Nullable<Scene> | undefined) {
   SceneLoader.ImportMesh("", BASE_URL + "/sampleModels/Fox/glTF/", "Fox.gltf", scene, function (newMeshes, particleSystems, skeletons, animationGroups) {
-    //let step = 0.05 * scene.getAnimationRatio();  
-    const mesh = newMeshes[0];
+    var mesh = newMeshes[0];
     mesh.scaling = new Vector3(0.05, 0.05, -0.05);
-    //mesh.position = new Vector3(0, 0, 0);
     mesh.rotation = Vector3.Zero();
     //最初の場所
-    var targetNum = getRand(10, 500);
-    var id = getRand(1, 100);
-    console.log(">>>>>" + targetNum);
-
-
-
-
-
-    var ddd = new Person('Takashi', targetNum);
-    persons.push(ddd);
-    //targetNum = 25;
-    //console.log("targetnum;" + targetNum);
-    var chip = chipArray[targetNum];
-    console.log("first target is [col:" + chip.col + "/row:" + chip.row + "]");
-    mesh.position = new Vector3(chip.col, 0, chip.row);
-    var thisnps = nps;
-    nps.id = id;
-    nps.targetMesh = mesh;
-    nps.targetObj = targetObj;
-    nps.col = chip.col;
-    nps.row = chip.row;
-    nps.ddd = ddd;
-    npcs.push(thisnps);
-    console.log(npcs.length);
-    scene.onBeforeRenderObservable.add(() => {
-      //mesh.position.x += step;
-    });
+    const targetNum = getRand(10, 500);
+    const chip = chipArray[targetNum];
+    console.log("first target is [num:" + targetNum + "/col:" + chip.col + "/row:" + chip.row + "]");
+    var p: Person = new Person(targetNum, chip.col, chip.row);
+    p.setMesh(mesh);
+    mesh.position.x = chip.col;
+    mesh.position.z = chip.row;
+    persons.push(p);
   });
 }
 
-function getdoubleDigestNumer(number) {
-  return ("0" + number).slice(-2);
-}
-
-function generateMap(scene) {
+function generateMap(scene: Scene) {
   var mapWidth = 50;
   var chipNum = 1;
   //1: 平地 2:道路 3:川 4:木 5:石 6:家
@@ -260,9 +198,6 @@ function generateMap(scene) {
       demo.type = chipType;
       demo.col = col;
       demo.row = row;
-      //console.log(col);
-      //chipObj.posX = colPos;
-      //chipObj.posZ = rowPos;
       chipArray.push(demo);
       // = chipType;
       if (chipType == 1) {
@@ -291,13 +226,12 @@ function generateMap(scene) {
     }
   }
 
-  //createNPC(scene);
-  //createNPC(scene);
+  createNPC(scene);
+  createNPC(scene);
   //createNPC(scene)
 }
 
 const main = async () => {
-  console.log("ccccc");
 
   const app = document.querySelector<HTMLDivElement>("body");
   const canvas = document.createElement("canvas");
@@ -316,23 +250,20 @@ const main = async () => {
 
   // GUI
   var advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
-
-  
   var button1 = GUI.Button.CreateSimpleButton("but1", "Reset Map");
   button1.width = "100px"
   button1.height = "20px";
   button1.color = "white";
   button1.cornerRadius = 20;
   button1.background = "red";
-  button1.onPointerUpObservable.add(function() {
-      //alert("you did it!");
-      resetMap(scene);
+  button1.onPointerUpObservable.add(function () {
+    //alert("you did it!");
+    resetMap(scene);
   });
-  advancedTexture.addControl(button1);   
-  
+  advancedTexture.addControl(button1);
+
   //地面
   var ground = Mesh.CreateGround("ground1", 2000, 2000, 2, scene);
-  //ground.diffuseColor = new BABYLON.Color3(0, 0, 1);
   var material = new StandardMaterial("bookcase", scene);
   material.diffuseColor = new Color3(.2, .4, .5);
   ground.material = material
@@ -341,101 +272,66 @@ const main = async () => {
 
   var stepId = 0;
   setInterval(function () {
+    for (var j = 0; j < persons.length; j++) {
+      if (persons[j].mesh != undefined) {
+        if (persons[j].mesh.position.x < persons[j].targetCol) {
+          persons[j].mesh.position.x += 1;
+          //persons[j].mesh.rotate(new Vector3(persons[j].mesh.position.x, persons[j].mesh.position.y, persons[j].mesh.position.z), Math.PI / 180 * 90, Space.LOCAL);
+        }
+        if (persons[j].mesh.position.x > persons[j].targetCol) {
+          persons[j].mesh.position.x -= 1;
+        }
+        if (persons[j].mesh.position.z < persons[j].targetRow) {
+          persons[j].mesh.position.z += 1;
+        }
+        if (persons[j].mesh.position.z > persons[j].targetRow) {
+          persons[j].mesh.position.z -= 1;
+        }
 
-    //resetMap(scene);
-
-    stepId++;
-    for (var i = 0; i < npcs.length; i++) {
-      if (npcs[i].targetAvailable == false && chipArray.length > 0) {
+        if (persons[j].mesh.position.x == persons[j].targetCol
+          && persons[j].mesh.position.z == persons[j].targetRow
+          && persons[j].getIsTargetAvailable() == true) {
+          persons[j].setIsTargetAvailable(false);
+          persons[j].col = persons[j].targetCol;
+          persons[j].row = persons[j].targetRow;
+        }
+      }
+      if (persons[j].getIsTargetAvailable() == false && chipArray.length > 0) {
         var d = getRand(1, 4);
-        //console.log("targetcol&row:" + chipArray[targetNum].col + "-" + chipArray[targetNum].row);
+        console.log("direction>" + d);
+        var isSetTraget = false;
         if (d == 1) {
-          npcs[i].targetObj.col = npcs[i].col + 1;
-          npcs[i].targetObj.row = npcs[i].row;
+          if (persons[j].targetCol + 1 < 30) {
+            persons[j].targetCol = persons[j].targetCol + 1;
+            isSetTraget = true;
+          }
         }
         if (d == 2) {
-          npcs[i].targetObj.col = npcs[i].col - 1;
-          npcs[i].targetObj.row = npcs[i].row;
+          if (persons[j].targetCol + 1 > 1) {
+            persons[j].targetCol = persons[j].targetCol - 1;
+            isSetTraget = true;
+          }
         }
         if (d == 3) {
-          npcs[i].targetObj.col = npcs[i].col;
-          npcs[i].targetObj.row = npcs[i].row + 1;
+          if (persons[j].targetRow + 1 < 30) {
+            persons[j].targetRow = persons[j].targetRow + 1;
+            isSetTraget = true;
+          }
         }
         if (d == 4) {
-          npcs[i].targetObj.col = npcs[i].col;
-          npcs[i].targetObj.row = npcs[i].row - 1;
+          if (persons[j].targetRow - 1 > 1) {
+            persons[j].targetRow = persons[j].targetRow - 1;
+            isSetTraget = true;
+          }
         }
-        if (1 <= npcs[i].targetObj.col && npcs[i].targetObj.col <= 30 && 1 <= npcs[i].targetObj.row && npcs[i].targetObj.row <= 30) {
-          npcs[i].targetAvailable = true;
-          //console.log("next target is [col:" + npcs[i].targetObj.col + "/row:" + npcs[i].targetObj.row + "]");
+        if (isSetTraget == true) {
+          persons[j].setIsTargetAvailable(true);
         }
-        //console.log(npcs[i].targetObj.col + "-" + npcs[i].targetObj.row);
       }
-      //console.log(npcs.length);
-      for (var j = 0; j < persons.length; j++) {
-        console.log("person>" + persons[j].age + "-" + j);
-      }
-
-      for (var i = 0; i < npcs.length; i++) {
-        //console.log("id>" + npcs[i].ddd.age + "-" + i);
-        if (npcs[i].targetMesh.position.x < npcs[i].targetObj.col) {
-          //console.log(stepId + " " + npcs[i].id);
-          //console.log(npcs[i].targetMesh.position.x + "-" + npcs[i].targetObj.col);
-          //console.log("dd");
-          npcs[i].targetMesh.position.x += 1;
-          //npcs[i].targetMesh.position.x = toFixed(1).npcs[i].targetMesh.position.x;
-        }
-        if (npcs[i].targetMesh.position.x > npcs[i].targetObj.col) {
-          //console.log(stepId + " " + "b");
-          //console.log(npcs[i].targetMesh.position.x + "-" + npcs[i].targetObj.col);
-          npcs[i].targetMesh.position.x -= 1;
-          //npcs[i].targetMesh.position.x = toFixed(1).npcs[i].targetMesh.position.x;
-        }
-        if (npcs[i].targetMesh.position.z < npcs[i].targetObj.row) {
-          //console.log(stepId + " " + "c");
-          //console.log(npcs[i].targetMesh.position.z + "-" + npcs[i].targetObj.row);
-          npcs[i].targetMesh.position.z += 1;
-        }
-        if (npcs[i].targetMesh.position.z > npcs[i].targetObj.row) {
-          //console.log(stepId + " " + "d");
-          //console.log(npcs[i].targetMesh.position.z + "-" + npcs[i].targetObj.row);
-          npcs[i].targetMesh.position.z -= 1;
-        }
-        //console.log(npcs[i].targetMesh.position.x + "-" + npcs[i].targetObj.col + "|" + npcs[i].targetMesh.position.z + "-" + npcs[i].targetObj.row);
-        //console.log(npcs[i].targetMesh.position.z + "-" + npcs[i].targetObj.row);
-        if (npcs[i].targetMesh.position.x == npcs[i].targetObj.col
-          && npcs[i].targetMesh.position.z == npcs[i].targetObj.row
-          && npcs[i].targetAvailable == true) {
-          //targetをリセットする
-          npcs[i].targetAvailable = false;
-          npcs[i].col = npcs[i].targetObj.col;
-          npcs[i].row = npcs[i].targetObj.row;
-          //console.log("target reset");
-        } else {
-          //console.log(stepId + " " + npcs[i].targetAvailable + "|" + npcs[i].targetMesh.position.x + "-" + npcs[i].targetObj.col + "|" + npcs[i].targetMesh.position.z + "-" + npcs[i].targetObj.row);
-          /*
-            if(npcs[i].targetMesh.position.x < npcs[i].targetObj.col){
-              //console.log("dd");
-              npcs[i].targetMesh.position.x += 0.1;
-            }
-            if(npcs[i].targetMesh.position.x > npcs[i].targetObj.col){
-              npcs[i].targetMesh.position.x -= 0.1;
-            }
-            if(npcs[i].targetMesh.position.z < npcs[i].targetObj.row){
-              npcs[i].targetMesh.position.z += 0.1;
-            }
-            if(npcs[i].targetMesh.position.z > npcs[i].targetObj.row){
-              npcs[i].targetMesh.position.z -= 0.1;
-            }
-            */
-        }
-
-      }
-
-
+      console.log("step:" + stepId + "/" + persons[j].getIsTargetAvailable() + "/x:" + persons[j].mesh.position.x + "/col:" + persons[j].col + "/tcol:" + persons[j].targetCol + "/y:" + persons[j].mesh.position.y + "/row:" + persons[j].row + "/trow:" + persons[j].targetRow);
     }
-  }, 1000);
-
+    stepId++;
+  }, 400);
 
   // Run render loop
   babylonEngine.runRenderLoop(() => {
