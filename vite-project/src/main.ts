@@ -41,34 +41,138 @@ function orgFloor(value: number, base: number) {
   return Math.floor(value * base) / base;
 }
 
-/*
-
+var MAP_SIZE = 30;
+var NPC_COUNT = 5;
+var ENEMY_COUNT = 15;
+var ITEM_COUNT = 20;
+var MAP_ARRAY: any[] = [];
+var MAP_ARRAY2 = [6, 6, 6, 5, 7, 2, 1, 4, 3, 1, 1, 3, 2, 7, 7, 3, 2, 4, 6, 5, 6, 5, 6, 7, 7, 5, 7, 4, 5, 1,
+  3, 5, 6, 5, 5, 4, 4, 4, 4, 3, 4, 5, 4, 6, 7, 3, 4, 4, 5, 4, 4, 4, 5, 5, 4, 4, 4, 4, 4, 5,
+  2, 3, 4, 4, 4, 4, 4, 5, 4, 5, 5, 5, 5, 6, 6, 3, 4, 4, 5, 4, 4, 3, 4, 5, 4, 4, 4, 3, 4, 3,
+  4, 4, 4, 4, 4, 3, 4, 4, 3, 4, 5, 6, 5, 4, 4, 3, 4, 3, 4, 4, 5, 4, 4, 4, 4, 4, 5, 4, 5, 7,
+  5, 5, 5, 5, 4, 3, 4, 3, 4, 4, 5, 6, 5, 4, 4, 3, 4, 4, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2,
+  7, 4, 4, 5, 4, 4, 4, 4, 5, 4, 4, 6, 5, 4, 3, 3, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 4, 4, 3, 2,
+  4, 4, 3, 3, 4, 4, 4, 4, 6, 5, 5, 5, 4, 4, 4, 3, 4, 4, 5, 4, 4, 3, 4, 4, 4, 4, 4, 3, 4, 6,
+  1, 4, 4, 4, 4, 4, 5, 5, 6, 4, 4, 4, 4, 4, 4, 3, 5, 4, 5, 4, 3, 4, 5, 4, 4, 3, 3, 3, 4, 5,
+  1, 4, 5, 5, 4, 5, 5, 4, 5, 4, 4, 4, 4, 5, 4, 3, 6, 5, 4, 5, 4, 4, 4, 5, 4, 3, 3, 4, 5, 6,
+  7, 6, 5, 4, 4, 5, 5, 4, 4, 3, 4, 3, 4, 4, 5, 3, 7, 6, 5, 4, 4, 3, 4, 4, 4, 4, 5, 5, 5, 3,
+  5, 5, 4, 3, 3, 4, 4, 4, 4, 4, 4, 3, 4, 5, 6, 3, 8, 7, 6, 5, 3, 4, 4, 3, 4, 4, 5, 5, 5, 5,
+  3, 4, 4, 4, 3, 4, 4, 4, 4, 4, 3, 4, 5, 4, 5, 3, 7, 6, 5, 4, 4, 3, 3, 4, 4, 3, 3, 4, 5, 7,
+  2, 3, 4, 3, 3, 4, 5, 4, 5, 4, 4, 5, 6, 6, 6, 3, 6, 5, 4, 4, 4, 4, 5, 5, 4, 4, 4, 4, 5, 3,
+  6, 4, 3, 4, 4, 5, 4, 4, 4, 4, 4, 4, 5, 5, 4, 3, 5, 5, 4, 4, 5, 4, 4, 4, 5, 5, 5, 6, 5, 4,
+  3, 3, 4, 4, 5, 4, 4, 3, 4, 4, 3, 4, 4, 4, 4, 3, 5, 4, 4, 4, 4, 4, 4, 4, 5, 5, 6, 6, 5, 4,
+  2, 3, 4, 3, 4, 3, 4, 3, 4, 4, 3, 4, 4, 4, 3, 3, 5, 4, 4, 4, 4, 4, 5, 4, 4, 4, 5, 5, 5, 6,
+  7, 4, 3, 3, 3, 4, 4, 3, 3, 4, 4, 4, 4, 4, 4, 3, 4, 4, 3, 3, 4, 5, 4, 4, 4, 4, 4, 4, 4, 2,
+  4, 4, 4, 4, 4, 5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 5, 4, 3, 3, 4, 4, 3, 4, 4, 4, 3, 4, 3, 2,
+  6, 5, 5, 4, 5, 4, 3, 3, 4, 4, 4, 4, 3, 3, 5, 3, 5, 5, 4, 3, 4, 4, 4, 4, 3, 4, 3, 3, 3, 1,
+  5, 5, 4, 4, 4, 4, 4, 3, 4, 5, 5, 3, 3, 3, 4, 3, 5, 4, 4, 4, 4, 5, 4, 4, 4, 4, 3, 4, 4, 6,
+  6, 4, 4, 5, 5, 6, 6, 5, 6, 6, 5, 3, 4, 3, 3, 3, 4, 4, 5, 4, 4, 5, 4, 4, 3, 4, 4, 4, 5, 7,
+  5, 3, 4, 4, 4, 6, 6, 5, 5, 5, 5, 4, 4, 4, 3, 3, 5, 4, 5, 4, 4, 3, 3, 3, 4, 4, 5, 5, 5, 6,
+  3, 3, 4, 3, 4, 4, 5, 4, 4, 4, 4, 4, 4, 4, 4, 3, 5, 4, 4, 4, 4, 3, 4, 3, 4, 4, 5, 4, 3, 1,
+  1, 3, 3, 3, 5, 4, 5, 4, 4, 4, 4, 4, 4, 5, 4, 3, 4, 4, 4, 4, 4, 4, 5, 4, 4, 4, 3, 2, 2, 2,
+  2, 1, 2, 2, 2, 1, 2, 2, 1, 2, 1, 1, 2, 2, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 2, 2,
+  2, 4, 4, 5, 5, 4, 4, 4, 4, 5, 4, 5, 4, 5, 4, 3, 3, 4, 4, 3, 3, 4, 6, 5, 4, 4, 4, 4, 4, 3,
+  6, 5, 4, 4, 5, 3, 3, 4, 4, 4, 4, 5, 4, 4, 5, 3, 4, 4, 4, 3, 4, 5, 6, 5, 4, 5, 5, 5, 4, 6,
+  4, 5, 5, 5, 4, 3, 4, 4, 4, 3, 4, 4, 3, 3, 5, 3, 4, 5, 4, 4, 4, 5, 5, 5, 4, 5, 5, 4, 4, 7,
+  7, 5, 5, 4, 4, 5, 4, 4, 3, 4, 4, 3, 3, 4, 5, 3, 5, 5, 5, 3, 2, 3, 3, 4, 5, 5, 4, 4, 3, 1,
+  7, 1, 3, 2, 7, 7, 3, 5, 1, 6, 1, 3, 3, 5, 4, 3, 6, 6, 6, 2, 1, 3, 2, 1, 7, 6, 6, 5, 2, 6];
+var MAP_ARRAY3 = [5, 2, 1, 4, 3, 1, 1, 3, 2, 5, 2, 4, 5, 3, 5, 4, 5, 1, 3, 5, 4, 2, 2, 5, 1, 5, 4, 3, 5, 2,
+  4, 4, 5, 1, 4, 2, 4, 1, 5, 2, 5, 4, 1, 5, 5, 5, 5, 5, 4, 2, 5, 4, 4, 2, 1, 5, 2, 3, 4, 1,
+  3, 4, 1, 2, 2, 1, 3, 2, 3, 3, 3, 5, 4, 4, 4, 3, 3, 5, 4, 5, 1, 5, 5, 5, 5, 3, 4, 3, 4, 1,
+  4, 1, 1, 2, 2, 1, 1, 2, 2, 2, 1, 5, 3, 2, 2, 4, 1, 5, 4, 4, 2, 4, 5, 5, 2, 2, 4, 3, 4, 4,
+  3, 3, 1, 4, 2, 4, 4, 1, 3, 3, 1, 4, 3, 5, 2, 2, 4, 4, 2, 2, 4, 2, 4, 4, 2, 1, 4, 2, 1, 2,
+  3, 5, 4, 4, 2, 5, 4, 1, 2, 5, 3, 1, 5, 3, 1, 1, 5, 5, 1, 3, 1, 1, 3, 4, 5, 1, 3, 1, 1, 5,
+  4, 1, 2, 3, 1, 2, 3, 5, 3, 5, 5, 3, 4, 1, 1, 4, 4, 4, 3, 3, 5, 4, 2, 4, 4, 3, 5, 3, 5, 3,
+  2, 3, 1, 4, 2, 1, 5, 3, 1, 4, 4, 1, 1, 1, 5, 3, 5, 3, 1, 4, 5, 3, 4, 1, 4, 5, 4, 1, 3, 3,
+  3, 5, 3, 1, 3, 4, 2, 3, 2, 2, 2, 3, 3, 2, 2, 3, 5, 3, 3, 1, 2, 5, 3, 2, 2, 4, 5, 2, 2, 3,
+  3, 5, 2, 2, 5, 4, 5, 4, 1, 2, 5, 1, 4, 5, 1, 5, 1, 3, 3, 4, 1, 2, 5, 2, 3, 4, 3, 1, 4, 4,
+  5, 2, 2, 3, 2, 2, 4, 5, 4, 2, 3, 2, 1, 2, 3, 3, 4, 2, 3, 2, 3, 2, 4, 5, 5, 5, 4, 5, 5, 5,
+  3, 3, 1, 1, 2, 3, 5, 3, 1, 4, 2, 1, 3, 3, 3, 5, 2, 1, 5, 1, 1, 1, 2, 4, 4, 4, 5, 4, 1, 5,
+  4, 2, 1, 5, 2, 2, 1, 4, 3, 5, 1, 1, 2, 3, 5, 2, 3, 1, 2, 4, 3, 3, 3, 5, 2, 1, 3, 3, 3, 2,
+  3, 3, 3, 1, 5, 5, 4, 1, 4, 3, 2, 2, 1, 5, 2, 5, 3, 3, 5, 4, 5, 3, 3, 4, 1, 5, 4, 5, 1, 1,
+  5, 5, 1, 3, 4, 4, 3, 2, 3, 3, 5, 4, 5, 4, 1, 2, 4, 3, 5, 1, 4, 5, 3, 5, 1, 1, 3, 5, 4, 2,
+  4, 2, 1, 4, 1, 5, 3, 5, 3, 3, 3, 5, 2, 3, 5, 1, 1, 4, 4, 4, 5, 4, 1, 3, 3, 2, 3, 4, 1, 1,
+  2, 3, 5, 2, 3, 4, 3, 2, 2, 1, 2, 2, 4, 4, 7, 7, 7, 7, 7, 1, 5, 1, 1, 1, 3, 4, 2, 4, 1, 2,
+  3, 1, 3, 3, 3, 5, 1, 3, 2, 2, 4, 3, 3, 7, 7, 7, 7, 7, 7, 7, 3, 2, 4, 4, 1, 1, 1, 1, 2, 1,
+  4, 1, 2, 1, 3, 1, 2, 1, 3, 2, 3, 3, 7, 7, 8, 3, 3, 1, 2, 2, 7, 4, 5, 1, 1, 4, 3, 4, 1, 2,
+  1, 1, 2, 3, 2, 4, 2, 4, 1, 2, 2, 2, 2, 2, 1, 1, 2, 1, 8, 2, 7, 5, 5, 1, 1, 1, 1, 2, 1, 1,
+  1, 1, 1, 1, 3, 1, 2, 3, 5, 1, 1, 1, 1, 1, 2, 3, 8, 3, 8, 2, 1, 1, 1, 1, 3, 1, 1, 1, 3, 2,
+  1, 3, 3, 2, 4, 2, 2, 3, 3, 3, 5, 5, 1, 7, 8, 8, 8, 8, 8, 7, 3, 5, 1, 1, 1, 2, 4, 2, 3, 1,
+  1, 3, 5, 3, 5, 2, 4, 2, 2, 1, 1, 3, 7, 7, 8, 8, 8, 8, 8, 3, 1, 2, 2, 1, 1, 1, 5, 2, 1, 1,
+  2, 4, 1, 3, 1, 3, 4, 2, 5, 1, 2, 4, 5, 7, 7, 3, 7, 3, 7, 7, 4, 5, 2, 1, 3, 4, 1, 5, 2, 3,
+  4, 4, 2, 5, 3, 3, 5, 1, 2, 1, 4, 2, 2, 2, 7, 7, 7, 7, 7, 2, 4, 1, 1, 2, 1, 1, 3, 3, 5, 4,
+  1, 4, 2, 3, 5, 4, 4, 5, 1, 4, 1, 2, 2, 5, 4, 2, 4, 4, 3, 1, 5, 4, 3, 4, 1, 2, 4, 1, 5, 2,
+  2, 1, 2, 5, 1, 1, 1, 5, 1, 5, 1, 4, 2, 4, 3, 2, 4, 2, 1, 2, 4, 3, 2, 2, 4, 5, 3, 2, 4, 1,
+  3, 3, 5, 3, 3, 2, 4, 4, 2, 2, 1, 1, 5, 5, 2, 3, 2, 1, 3, 2, 3, 4, 4, 5, 1, 2, 5, 3, 1, 3,
+  5, 1, 4, 5, 2, 1, 3, 2, 4, 4, 3, 2, 3, 5, 5, 4, 3, 4, 3, 2, 3, 5, 1, 5, 1, 5, 2, 4, 4, 4];
+var MAP_ARRAY4 = [4, 4, 3, 3, 4, 4, 5, 5, 4, 5, 5, 5, 5, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 6, 6, 5, 5, 4, 4, 3,
+  4, 5, 3, 4, 5, 5, 5, 4, 3, 4, 5, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 6, 6, 5, 5, 5, 4, 2,
+  3, 5, 3, 3, 5, 4, 5, 4, 4, 5, 5, 5, 6, 6, 5, 7, 7, 7, 7, 7, 7, 7, 6, 6, 7, 5, 4, 5, 3, 1,
+  4, 5, 3, 3, 5, 3, 4, 5, 5, 4, 5, 4, 6, 6, 6, 7, 7, 6, 6, 7, 6, 7, 6, 6, 7, 6, 4, 4, 2, 1,
+  5, 4, 4, 4, 5, 3, 5, 4, 5, 5, 5, 3, 6, 6, 6, 7, 6, 7, 5, 7, 5, 7, 5, 7, 7, 6, 5, 3, 1, 2,
+  4, 3, 5, 5, 3, 5, 4, 5, 5, 5, 4, 5, 7, 6, 6, 7, 7, 5, 7, 5, 7, 6, 7, 7, 5, 6, 4, 2, 1, 3,
+  3, 2, 4, 5, 3, 5, 4, 6, 4, 4, 4, 5, 6, 6, 5, 7, 7, 5, 7, 6, 6, 5, 6, 6, 5, 5, 3, 1, 2, 4,
+  2, 1, 3, 5, 4, 5, 4, 7, 4, 5, 5, 5, 7, 5, 5, 7, 7, 5, 6, 6, 5, 4, 5, 5, 5, 4, 2, 1, 3, 5,
+  1, 1, 2, 4, 5, 5, 3, 7, 5, 5, 5, 4, 6, 5, 5, 7, 6, 5, 6, 6, 5, 3, 5, 4, 4, 3, 1, 2, 4, 5,
+  2, 2, 1, 3, 5, 6, 2, 7, 4, 4, 4, 4, 6, 5, 5, 7, 7, 5, 6, 5, 6, 3, 5, 3, 3, 2, 1, 3, 5, 4,
+  3, 3, 1, 2, 5, 6, 2, 7, 3, 4, 5, 5, 5, 5, 5, 7, 7, 5, 5, 5, 6, 3, 5, 3, 2, 1, 2, 4, 5, 3,
+  4, 4, 2, 1, 4, 5, 3, 6, 2, 5, 4, 5, 4, 4, 5, 6, 7, 6, 5, 5, 5, 3, 4, 3, 1, 1, 3, 5, 4, 2,
+  5, 5, 3, 1, 3, 4, 3, 6, 3, 6, 5, 4, 4, 3, 4, 5, 6, 6, 5, 4, 4, 3, 3, 2, 1, 2, 4, 5, 3, 1,
+  5, 5, 4, 2, 2, 3, 3, 5, 4, 6, 5, 3, 3, 2, 3, 4, 5, 5, 5, 3, 3, 3, 2, 1, 2, 3, 5, 4, 2, 1,
+  4, 4, 5, 3, 1, 2, 3, 4, 5, 5, 4, 2, 2, 1, 2, 3, 4, 4, 4, 2, 2, 2, 1, 1, 3, 4, 5, 3, 1, 2,
+  3, 3, 5, 4, 1, 1, 2, 3, 5, 4, 3, 1, 1, 1, 1, 2, 3, 3, 3, 1, 1, 1, 1, 2, 4, 5, 4, 2, 1, 3,
+  2, 2, 4, 5, 2, 1, 1, 2, 4, 3, 2, 1, 2, 2, 1, 1, 2, 2, 2, 1, 2, 2, 2, 3, 5, 5, 3, 1, 2, 4,
+  1, 1, 3, 5, 3, 2, 1, 1, 3, 2, 1, 2, 3, 3, 2, 1, 1, 1, 1, 2, 3, 3, 3, 4, 5, 4, 2, 1, 3, 5,
+  1, 1, 2, 4, 4, 3, 2, 1, 2, 1, 1, 3, 4, 4, 3, 2, 1, 2, 2, 3, 4, 4, 4, 5, 4, 3, 1, 2, 4, 5,
+  2, 2, 1, 3, 5, 4, 3, 2, 1, 1, 2, 4, 5, 5, 4, 3, 2, 3, 3, 4, 5, 5, 5, 5, 3, 2, 1, 3, 5, 4,
+  3, 3, 1, 2, 5, 5, 4, 3, 2, 2, 3, 5, 6, 6, 5, 4, 3, 4, 4, 5, 6, 6, 5, 4, 2, 1, 2, 4, 5, 3,
+  4, 4, 2, 1, 4, 5, 5, 4, 3, 3, 4, 6, 7, 7, 6, 5, 4, 5, 5, 6, 7, 6, 4, 3, 1, 1, 3, 5, 4, 2,
+  5, 5, 3, 1, 3, 4, 5, 5, 4, 4, 5, 7, 7, 7, 7, 6, 5, 6, 6, 7, 7, 5, 3, 2, 1, 2, 4, 5, 3, 1,
+  5, 5, 4, 2, 2, 3, 4, 5, 5, 5, 6, 7, 7, 7, 7, 7, 6, 7, 7, 7, 6, 4, 2, 1, 2, 3, 5, 4, 2, 1,
+  4, 4, 5, 3, 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 6, 5, 3, 1, 1, 3, 4, 5, 3, 1, 2,
+  3, 3, 5, 4, 1, 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7, 6, 5, 4, 2, 1, 2, 4, 5, 4, 2, 1, 3,
+  2, 2, 4, 5, 2, 1, 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 6, 5, 4, 3, 1, 2, 3, 5, 5, 3, 1, 2, 4,
+  1, 1, 3, 5, 3, 2, 1, 1, 2, 3, 4, 5, 6, 6, 6, 6, 6, 5, 4, 3, 2, 1, 3, 4, 5, 4, 2, 1, 3, 5,
+  1, 1, 2, 4, 4, 3, 2, 1, 1, 2, 3, 4, 5, 5, 5, 5, 5, 4, 3, 2, 1, 2, 4, 5, 4, 3, 1, 2, 4, 5];
+var MAP_ARRAY5 = [4, 1, 8, 5, 1, 2, 5, 3, 3, 7, 8, 1, 5, 8, 4, 4, 1, 8, 6, 4, 3, 8, 1, 8, 3, 3, 2, 3, 7, 1, 8, 2, 2, 4, 3, 1, 1, 2, 2, 1, 3, 2, 2, 2, 3, 4, 2, 2, 6, 4, 6, 7, 2, 8, 2, 6, 5, 3, 8, 8, 3, 4, 3, 1, 1, 3, 1, 2, 1, 2, 1, 1, 1, 1, 4, 5, 4, 4, 1, 4, 5, 8, 8, 7, 6, 7, 6, 5, 8, 8, 2, 4, 5, 1, 3, 2, 1, 1, 2, 3, 2, 1, 1, 2, 2, 2, 2, 1, 2, 3, 2, 1, 3, 3, 7, 8, 7, 6, 8, 7, 8, 8, 5, 4, 4, 3, 4, 4, 2, 2, 2, 1, 1, 1, 3, 3, 2, 1, 1, 2, 3, 1, 2, 1, 8, 8, 8, 6, 1, 6, 3, 4, 4, 4, 5, 4, 3, 4, 1, 4, 3, 1, 2, 2, 3, 3, 2, 3, 3, 1, 3, 2, 3, 1, 1, 2, 3, 5, 5, 5, 8, 7, 6, 5, 4, 4, 4, 5, 2, 3, 3, 1, 2, 2, 3, 2, 2, 1, 3, 1, 1, 1, 2, 1, 2, 2, 3, 3, 2, 3, 2, 3, 7, 7, 7, 4, 5, 6, 5, 3, 4, 3, 2, 1, 4, 5, 3, 1, 2, 3, 3, 4, 3, 1, 1, 2, 1, 1, 2, 3, 1, 2, 3, 7, 6, 3, 4, 7, 7, 8, 3, 2, 1, 2, 1, 1, 1, 1, 2, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 3, 2, 1, 2, 2, 1, 2, 5, 7, 7, 8, 8, 8, 2, 1, 1, 1, 1, 2, 2, 1, 3, 2, 1, 1, 1, 2, 1, 1, 2, 2, 5, 1, 3, 2, 8, 2, 3, 4, 6, 5, 8, 8, 3, 4, 3, 3, 2, 3, 2, 1, 2, 3, 1, 1, 1, 2, 2, 1, 1, 2, 5, 5, 6, 2, 7, 3, 2, 1, 5, 2, 7, 8, 2, 3, 2, 1, 1, 1, 3, 1, 2, 2, 3, 1, 1, 1, 1, 2, 2, 2, 7, 6, 6, 1, 7, 4, 3, 1, 1, 2, 6, 7, 1, 2, 2, 3, 2, 1, 2, 3, 2, 1, 4, 3, 3, 2, 2, 1, 2, 3, 4, 3, 3, 1, 8, 5, 3, 1, 1, 1, 5, 5, 1, 2, 1, 1, 1, 1, 2, 1, 1, 3, 4, 2, 1, 1, 2, 1, 1, 3, 4, 5, 7, 1, 8, 8, 8, 3, 2, 2, 5, 5, 1, 1, 2, 1, 2, 2, 3, 3, 1, 3, 3, 4, 1, 2, 1, 1, 1, 1, 2, 2, 6, 3, 6, 7, 6, 5, 4, 5, 5, 4, 2, 1, 2, 2, 2, 1, 2, 2, 2, 1, 4, 4, 5, 3, 3, 3, 1, 2, 6, 3, 2, 7, 7, 3, 3, 4, 5, 4, 5, 5, 4, 2, 3, 3, 2, 2, 3, 1, 2, 1, 1, 5, 5, 5, 2, 3, 3, 3, 7, 4, 1, 7, 7, 6, 6, 4, 6, 6, 7, 5, 4, 6, 4, 2, 3, 2, 2, 2, 1, 2, 1, 1, 6, 6, 2, 1, 1, 1, 7, 4, 3, 8, 8, 8, 8, 3, 5, 2, 6, 5, 6, 6, 6, 3, 3, 3, 3, 3, 4, 4, 3, 2, 6, 6, 7, 1, 2, 2, 3, 4, 3, 3, 4, 4, 7, 7, 6, 6, 6, 6, 5, 5, 5, 2, 3, 2, 2, 3, 3, 3, 4, 3, 7, 7, 8, 8, 1, 3, 1, 3, 4, 3, 4, 5, 7, 7, 7, 8, 5, 6, 6, 6, 7, 1, 1, 2, 3, 3, 3, 2, 3, 1, 1, 2, 2, 1, 2, 4, 4, 3, 4, 3, 4, 5, 3, 8, 8, 7, 6, 6, 7, 6, 8, 1, 1, 1, 3, 2, 3, 2, 3, 2, 1, 2, 1, 1, 1, 3, 7, 6, 7, 8, 4, 3, 7, 6, 5, 6, 5, 5, 5, 5, 4, 2, 1, 3, 4, 5, 4, 3, 3, 1, 1, 3, 1, 1, 2, 4, 7, 6, 6, 6, 3, 4, 7, 6, 5, 7, 4, 5, 6, 5, 4, 2, 5, 6, 5, 5, 4, 3, 4, 1, 1, 2, 2, 1, 1, 1, 8, 5, 5, 7, 7, 3, 8, 6, 5, 5, 6, 6, 6, 6, 3, 3, 4, 5, 6, 3, 5, 4, 3, 1, 2, 1, 2, 1, 2, 2, 1, 1, 1, 1, 2, 8, 8, 7, 4, 6, 3, 7, 7, 6, 5, 5, 6, 5, 5, 6, 5, 4, 5, 6, 6, 6, 6, 7, 2, 2, 8, 8, 8, 8, 8, 8, 8, 7, 3, 2, 5, 7, 8, 7, 7, 6, 6, 6, 4, 3, 4, 5, 5, 6, 5, 6, 6, 5, 6, 1, 1, 8, 1, 3, 7, 7, 8, 7, 2, 1, 1, 1, 1, 2, 1, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 7, 5, 4, 7, 2, 7, 8, 7, 6, 7, 8, 8, 7, 6, 1, 1, 1, 2, 2, 1, 3, 2, 3, 2, 1, 4, 5, 5, 5, 4, 8, 5, 5, 8, 7, 7, 7, 6, 6, 7, 6, 8, 6, 7, 8, 7, 1, 1, 3, 4, 3, 3, 2, 3, 1, 1, 3, 5, 4, 5, 6, 5, 5, 8, 8];
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 
+const openAIKey = "";
+
 const llmchain_invoke = async (map_create_prompt: string) => {
   // OpenAIのモデルのインスタンスを作成
   const chatModel = new ChatOpenAI({
-    openAIApiKey: "",
+    openAIApiKey: openAIKey,
+    model: "gpt-3.5-turbo"
   });
 
   // プロンプトのテンプレート文章を定義
-  const template = `
+  const template2 = `
   条件:
-    マップサイズ: 60x60
-    マップの要素: 0:緑地, 1:道路, 2:川, 3:木, 4:丘
-    マップ要素の意味：緑地は -- 道路は -- 川は -- 木は -- 丘は --
-    出力形式：要素番号を順番に配列で書き出し 例[1,0,1,0,2,2,3,1,4]
-    ルール：道路はなるべく繋げてください。建物はプレイヤーが休める場所です。
-    マップの上部は丘になるようにしてください
+    あなたはRPGマップ生成の専門家です。自然で魅力的なマップを下記の条件で作成して、結果の配列だけを返してください。
+    マップのサイズ:
+      縦30*横30 合計900
+    マップの高さ:
+      1,2,3,4,5,6,7,8
+    出力形式：
+      マップの高さを配列で表現して出力してください 例[1,2,1,4,2,2,3,1,4]
+      配列の順番は左上から右下に向かって順番に配列に入れる形式です。
+    ルール：
+      道路などは3のマップで作成してください。川や海などは3よりも低い高さ、つまり1か2として表現してください。 
+      川の幅は1で、なるべく繋がるように考えて配置してください。
+      デコボコとした起伏のあるようなマップにして欲しいのですが、
+      プレイヤーは高さが1より高い差のあるマップには登れないため、なるべくなだらかに作成するようにしてください。
+      マップの中に少なくとも一つは最大の高さが8になるような山を配置するようにしてください。
+      山の形状は上から見たときに円を描くような形にしてください。
     その他の条件：{map_create_prompt}
 `;
 
   // テンプレート文章にあるチェック対象の単語を変数化
   const prompt = ChatPromptTemplate.fromMessages([
     ["system", "あなたはRPGマップ生成の専門家です。自然で魅力的なマップを下記の条件で作成して、結果の配列だけを返してください。"],
-    ["user", template],
+    ["user", template2],
   ]);
 
   // チャットメッセージを文字列に変換するための出力解析インスタンスを作成
@@ -82,31 +186,31 @@ const llmchain_invoke = async (map_create_prompt: string) => {
     map_create_prompt: map_create_prompt,
   });
 };
-*/
 
-var MAP_SIZE = 5;
-var NPC_COUNT = 1;
 var partsArray: { dispose: () => void; }[] | Mesh[] = [];
 var chipArray: {
   id: number; type: number; col: number; row: number;
 }[] = [];
 var persons: Person[] = [];
+var items: Item[] = [];
 
 class Person {
   id: number;
   col: number;
   row: number;
+  type: number;
   targetCol: number;
   targetRow: number;
   isTargetAvailable: boolean;
   mesh: AbstractMesh | undefined;
-  constructor(id: number, col: number, row: number) {
+  constructor(id: number, col: number, row: number, type: number) {
     this.id = id;
     this.col = col;
     this.row = row;
     this.targetCol = col;
     this.targetRow = row;
     this.isTargetAvailable = false;
+    this.type = type;
   }
   setMesh(mesh: AbstractMesh) {
     this.mesh = mesh
@@ -122,25 +226,94 @@ class Person {
   }
 }
 
-function createNPC(scene: Scene) {
-  var boxSize = { width: 0.2, height: 4, depth: 0.2 };
+class Item {
+  id: number;
+  col: number;
+  row: number;
+  type: number;
+  targetCol: number;
+  targetRow: number;
+  isTargetAvailable: boolean;
+  mesh: AbstractMesh | undefined;
+  constructor(id: number, col: number, row: number, type: number) {
+    this.id = id;
+    this.col = col;
+    this.row = row;
+    this.targetCol = col;
+    this.targetRow = row;
+    this.isTargetAvailable = false;
+    this.type = type;
+  }
+  setMesh(mesh: AbstractMesh) {
+    this.mesh = mesh
+  }
+  getMesh() {
+    return this.mesh;
+  }
+  setIsTargetAvailable(_boolean: boolean) {
+    this.isTargetAvailable = _boolean;
+  }
+  getIsTargetAvailable() {
+    return this.isTargetAvailable;
+  }
+}
+
+function createItem(scene: Scene, type: number) {
+  var boxSize = { width: 0.8, height: 1.5, depth: 0.8 };
   var mesh = MeshBuilder.CreateBox("box", boxSize);
   //mesh.scaling = new Vector3(0.05, 0.05, -0.05);
   mesh.rotation = Vector3.Zero();
   partsArray.push(mesh);
+  const Material1 = new StandardMaterial("material", scene);
+  Material1.diffuseColor = Color3.Black();
+  const Material2 = new StandardMaterial("material", scene);
+  Material2.diffuseColor = Color3.Black();
+  if (type == 1) {
+    mesh.material = Material1;
+  } else if (type == 2) {
+    mesh.material = Material2;
+  }
   //最初の場所
   const targetNum = getRand(1, MAP_SIZE * MAP_SIZE);
-  //const chip = chipArray[targetNum];
-  const chip = chipArray[0];
-  //console.log("first target is [num:" + targetNum + "/col:" + chip.col + "/row:" + chip.row + "]");
-  var p: Person = new Person(targetNum, chip.col, chip.row);
+  const chip = chipArray[targetNum];
+  var i: Item = new Item(targetNum, chip.col, chip.row, 1);
+  i.setMesh(mesh);
+
+  var c = getChip(chip.col, chip.row);
+  var h = c!.type;
+
+  mesh.position.x = chip.col;
+  mesh.position.y = h / 3;
+  mesh.position.z = chip.row;
+  items.push(i);
+}
+
+function createNPC(scene: Scene, type: number) {
+  var boxSize = { width: 0.2, height: 1, depth: 0.2 };
+  var mesh = MeshBuilder.CreateBox("box", boxSize);
+  //mesh.scaling = new Vector3(0.05, 0.05, -0.05);
+  mesh.rotation = Vector3.Zero();
+  partsArray.push(mesh);
+  const Material1 = new StandardMaterial("material", scene);
+  Material1.diffuseColor = Color3.White();
+  const Material2 = new StandardMaterial("material", scene);
+  Material2.diffuseColor = Color3.Red();
+  if (type == 1) {
+    mesh.material = Material1;
+  } else if (type == 2) {
+    mesh.material = Material2;
+  }
+  //最初の場所
+  const targetNum = getRand(1, MAP_SIZE * MAP_SIZE);
+  const chip = chipArray[targetNum];
+  var p: Person = new Person(targetNum, chip.col, chip.row, type);
   p.setMesh(mesh);
   mesh.position.x = chip.col;
   mesh.position.y = 0;
   mesh.position.z = chip.row;
-  const Material = new StandardMaterial("material", scene);
-  Material.diffuseColor = Color3.Random();
-  mesh.material = Material;
+  //const Material = new StandardMaterial("material", scene);
+  //Material.diffuseColor = Color3.Random();
+  //mesh.material = Material;
   persons.push(p);
   /*
     SceneLoader.ImportMesh("", BASE_URL + "/sampleModels/Fox/glTF/", "Fox.gltf", scene, function (newMeshes, particleSystems, skeletons, animationGroups) {
@@ -150,7 +323,7 @@ function createNPC(scene: Scene) {
       //最初の場所
       const targetNum = getRand(10, 500);
       const chip = chipArray[targetNum];
-      console.log("first target is [num:" + targetNum + "/col:" + chip.col + "/row:" + chip.row + "]");
+      //console.log("first target is [num:" + targetNum + "/col:" + chip.col + "/row:" + chip.row + "]");
       var p: Person = new Person(targetNum, chip.col, chip.row);
       p.setMesh(mesh);
       mesh.position.x = chip.col;
@@ -166,6 +339,20 @@ function resetMap(scene: Scene) {
   }
   partsArray = [];
   persons = [];
+
+  var mapid = getRand(1, 5);
+  if (mapid == 1) {
+    MAP_ARRAY = MAP_ARRAY;
+  } else if (mapid == 2) {
+    MAP_ARRAY = MAP_ARRAY2;
+  } else if (mapid == 3) {
+    MAP_ARRAY = MAP_ARRAY3;
+  } else if (mapid == 4) {
+    MAP_ARRAY = MAP_ARRAY4;
+  } else if (mapid == 5) {
+    MAP_ARRAY = MAP_ARRAY5;
+  }
+
   generateMap(scene);
 };
 
@@ -180,26 +367,25 @@ function getChip(col: number, row: number) {
 
 function generateMap(scene: Scene) {
   var bid = 1;
-  //1: 平地 2:道路 3:川 4:木 5:石 6:家
+  //1: 平地 2:道路 3:川 4:木
   const Material1 = new StandardMaterial("material", scene);
-  Material1.diffuseColor = new Color3(100 / 256, 200 / 256, 100 / 256);
+  Material1.diffuseColor = Color3.Green();
   const Material2 = new StandardMaterial("material", scene);
-  Material2.diffuseColor = new Color3(100 / 256, 100 / 256, 100 / 256);
+  Material2.diffuseColor = Color3.Gray();
   const Material3 = new StandardMaterial("material", scene);
-  Material3.diffuseColor = new Color3(10 / 256, 10 / 256, 100 / 256);
+  Material3.diffuseColor = Color3.Blue();
   const Material4 = new StandardMaterial("material", scene);
-  Material4.diffuseColor = new Color3(200 / 256, 20 / 256, 50 / 256);
-  const Material5 = new StandardMaterial("material", scene);
-  Material5.diffuseColor = new Color3(10 / 256, 200 / 256, 10 / 256);
-  const Material6 = new StandardMaterial("material", scene);
-  Material6.diffuseColor = new Color3(10 / 256, 20 / 256, 100 / 256);
+  Material4.diffuseColor = Color3.Yellow();
   //boxMaterial.diffuseColor = Color3.Random();
   for (var row = 1; row <= MAP_SIZE; row++) {
     for (var col = 1; col <= MAP_SIZE; col++) {
-      var box = MeshBuilder.CreateBox("box", { width: 1, height: 1, depth: 1 });
+      var num = MAP_ARRAY[bid];
+      var objectHight = num / 3;
+      var box = MeshBuilder.CreateBox("box", { width: 1, height: objectHight, depth: 1 });
       partsArray.push(box);
       box.position.x = col;
       box.position.z = row;
+      box.position.y = num / 6;
       const b = {
         id: 0,
         type: 0,
@@ -207,60 +393,63 @@ function generateMap(scene: Scene) {
         row: 0
       };;
       b.id = bid;
-      //1: 平地 2:道路 3:川 4:木 5:石 6:家
-      b.type = getRand(1, 2);
+      b.type = num;
       b.col = col;
       b.row = row;
       chipArray.push(b);
       if (b.type == 1) {
-        box.material = Material1;
-        box.position.y = 0;
-      } else if (b.type == 2) {
-        box.material = Material2;
-        box.position.y = 0.2;
-      } else if (b.type == 3) {
         box.material = Material3;
-        box.position.y = -0.4;
-      } else if (b.type == 4) {
+      } else if (b.type == 2) {
+        box.material = Material3;
+      } else if (b.type == 3) {
         box.material = Material4;
-        box.position.y = 0.5;
+      } else if (b.type == 4) {
+        box.material = Material1;
       } else if (b.type == 5) {
-        box.material = Material5;
-        box.position.y = 0;
+        box.material = Material1;
       } else if (b.type == 6) {
-        box.position.y = 0;
-        box.material = Material6;
+        box.material = Material2;
+      } else if (b.type == 7) {
+        box.material = Material2;
+      } else if (b.type == 8) {
+        box.material = Material2;
       } else {
-        box.position.y = 0;
         box.material = Material1;
       }
       bid++;
     }
   }
   for (var k = 0; k < NPC_COUNT; k++) {
-    createNPC(scene);
+    createNPC(scene, 1);
+  }
+  for (var k = 0; k < ENEMY_COUNT; k++) {
+    createNPC(scene, 2);
+  }
+  for (var k = 0; k < ITEM_COUNT; k++) {
+    createItem(scene, 1);
   }
 }
 
-function chkMapChip(col: number, row: number) {
+function chkMapChip(col: number, row: number, col2: number, row2: number) {
 
   //範囲外ではないか
   if (col < 0 || MAP_SIZE < col || row < 0 || MAP_SIZE < row) {
     return false;
   }
   //通行できるか
-  //1: 平地 2:道路 3:川 4:木 5:石 6:家
-  var _num = ((row - 1) * MAP_SIZE + col) - 0;
-  //var cp = chipArray[_num];
+  //今の高さより高いかを調べる
   var cp = getChip(col, row);
-  if (cp != null) {
-    if (cp.type == 1) {
-      console.log("check num > " + _num + "(" + col + "-" + row + ") > result:" + "true");
+  var cp2 = getChip(col2, row2);
+  if (cp != null && cp2 != null) {
+    if (cp?.type <= 2) {
+      return false;
+    }
+
+    if (cp?.type <= cp2.type + 1) {
       return true;
     }
+    return false;
   }
-  console.log("check num > " + _num + "(" + col + "-" + row + ") > result:" + "false");
-  return false;
 }
 
 
@@ -278,13 +467,11 @@ const main = async () => {
   new HemisphericLight("light1", new Vector3(0, 0.1, 0), scene);
 
   // Add a camera for the non-VR view in browser
-  const camera = new ArcRotateCamera("Camera", -(Math.PI / 4) * 3, Math.PI / 4, 50, new Vector3(5, 4, 2), scene);
-  //camera.setTarget(Vector3.Zero());
+  const camera = new ArcRotateCamera("Camera", -(Math.PI / 4) * 3, Math.PI / 4, 40, new Vector3(5, 4, 2), scene);
   camera.attachControl(true);
-  //var camera = new BABYLON.ArcRotateCamera("camera", 10, 10, 10, new BABYLON.Vector3(0, 10, 0), scene);
-  //camera.setTarget(BABYLON.Vector3.Zero());
+
   // GUI
-  //var advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+  var advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
   var button1 = GUI.Button.CreateSimpleButton("but1", "Reset Map");
   button1.width = "100px"
   button1.height = "20px";
@@ -295,7 +482,7 @@ const main = async () => {
     //alert("you did it!");
     resetMap(scene);
   });
-  //advancedTexture.addControl(button1);
+  advancedTexture.addControl(button1);
 
   //地面
   var ground = Mesh.CreateGround("ground1", 2000, 2000, 2, scene);
@@ -305,29 +492,59 @@ const main = async () => {
   ground.receiveShadows = true;
   ground.checkCollisions = true;
 
-
-  //llmchain_invoke("aaa");
-  //var aa = await llmchain_invoke("aaa");
-  //console.log(aa);
+  console.log("LLM thinking..");
+  var isLLMFlag = 0;
+  if (isLLMFlag == 1) {
+    //var aa = await llmchain_invoke("マップサイズ : " + MAP_SIZE + "x" + MAP_SIZE + "");
+    var aa = await llmchain_invoke("");
+    MAP_ARRAY = aa.split(',');
+  } else {
+    var mapid = getRand(1, 5);
+    if (mapid == 1) {
+      MAP_ARRAY = MAP_ARRAY;
+    } else if (mapid == 2) {
+      MAP_ARRAY = MAP_ARRAY2;
+    } else if (mapid == 3) {
+      MAP_ARRAY = MAP_ARRAY3;
+    } else if (mapid == 4) {
+      MAP_ARRAY = MAP_ARRAY4;
+    } else if (mapid == 5) {
+      MAP_ARRAY = MAP_ARRAY4;
+    }
+  }
+  console.log("LENGTH : " + MAP_ARRAY.length);
+  console.log(MAP_ARRAY);
+  resetMap(scene);
 
   var stepId = 0;
   setInterval(function () {
     for (var j = 0; j < persons.length; j++) {
-      //console.log(orgFloor(2.1234, 1));
       var speed = 1;
       if (persons[j].mesh != undefined) {
         if (orgFloor(persons[j].mesh!.position.x, 1) < persons[j].targetCol) {
           persons[j].mesh!.position.x += speed;
+          var c = getChip(persons[j].targetCol, persons[j].targetRow);
+          var h = c!.type;
+          persons[j].mesh!.position.y = h / 3;
           //persons[j].mesh.rotate(new Vector3(persons[j].mesh.position.x, persons[j].mesh.position.y, persons[j].mesh.position.z), Math.PI / 180 * 90, Space.LOCAL);
         }
         if (orgFloor(persons[j].mesh!.position.x, 1) > persons[j].targetCol) {
           persons[j].mesh!.position.x -= speed;
+          var c = getChip(persons[j].targetCol, persons[j].targetRow);
+          var h = c!.type;
+          persons[j].mesh!.position.y = h / 3;
         }
         if (orgFloor(persons[j].mesh!.position.z, 1) < persons[j].targetRow) {
           persons[j].mesh!.position.z += speed;
+          var c = getChip(persons[j].targetCol, persons[j].targetRow);
+          var h = c!.type;
+          persons[j].mesh!.position.y = h / 3;
         }
         if (orgFloor(persons[j].mesh!.position.z, 1) > persons[j].targetRow) {
           persons[j].mesh!.position.z -= speed;
+          var c = getChip(persons[j].targetCol, persons[j].targetRow);
+          var h = c!.type;
+          persons[j].mesh!.position.y = h / 3;
         }
         if (orgFloor(persons[j].mesh!.position.x, 1) == persons[j].targetCol
           && orgFloor(persons[j].mesh!.position.z, 1) == persons[j].targetRow
@@ -335,9 +552,12 @@ const main = async () => {
           persons[j].setIsTargetAvailable(false);
           persons[j].col = persons[j].targetCol;
           persons[j].row = persons[j].targetRow;
+          var c = getChip(persons[j].targetCol, persons[j].targetRow);
+          var h = c!.type;
+          persons[j].mesh!.position.y = h / 3;
         }
       }
-      console.log(persons[j].col + "-" + persons[j].row + "/" + persons[j].targetCol + "-" + persons[j].targetRow + " " + persons[j].isTargetAvailable);
+      //console.log(persons[j].col + "-" + persons[j].row + "/" + persons[j].targetCol + "-" + persons[j].targetRow + " " + persons[j].isTargetAvailable);
       if (persons[j].getIsTargetAvailable() == false && chipArray.length > 0) {
         //Agentに移動の目的を伝える
 
@@ -347,28 +567,28 @@ const main = async () => {
         var isSetTraget = false;
         if (d == 1) {
           //進めるかを確認する
-          var isPass = chkMapChip(persons[j].targetCol + 1, persons[j].targetRow);
+          var isPass = chkMapChip(persons[j].targetCol + 1, persons[j].targetRow, persons[j].col, persons[j].row);
           if (isPass == true) {
             persons[j].targetCol = persons[j].targetCol + 1;
             isSetTraget = true;
           }
         }
         if (d == 2) {
-          var isPass = chkMapChip(persons[j].targetCol - 1, persons[j].targetRow);
+          var isPass = chkMapChip(persons[j].targetCol - 1, persons[j].targetRow, persons[j].col, persons[j].row);
           if (isPass == true) {
             persons[j].targetCol = persons[j].targetCol - 1;
             isSetTraget = true;
           }
         }
         if (d == 3) {
-          var isPass = chkMapChip(persons[j].targetCol, persons[j].targetRow + 1);
+          var isPass = chkMapChip(persons[j].targetCol, persons[j].targetRow + 1, persons[j].col, persons[j].row);
           if (isPass == true) {
             persons[j].targetRow = persons[j].targetRow + 1;
             isSetTraget = true;
           }
         }
         if (d == 4) {
-          var isPass = chkMapChip(persons[j].targetCol, persons[j].targetRow - 1);
+          var isPass = chkMapChip(persons[j].targetCol, persons[j].targetRow - 1, persons[j].col, persons[j].row);
           if (isPass == true) {
             persons[j].targetRow = persons[j].targetRow - 1;
             isSetTraget = true;
@@ -381,10 +601,35 @@ const main = async () => {
       }
       //console.log("step:" + stepId + "/" + persons[j].getIsTargetAvailable() + "/x:" + persons[j].mesh.position.x + "/col:" + persons[j].col + "/tcol:" + persons[j].targetCol + "/y:" + persons[j].mesh.position.y + "/row:" + persons[j].row + "/trow:" + persons[j].targetRow);
     }
+
+
+    for (var i = 0; i < persons.length; i++) {
+      for (var j = 0; j < persons.length; j++) {
+        if (persons[i].type == 1 && persons[j].type == 2) {
+          if (persons[i].col == persons[j].col && persons[i].row == persons[j].row) {
+            persons[j].mesh?.dispose();
+            persons.splice(j, 1);
+            console.log("eat");
+          }
+        }
+      }
+    }
+
+    for (var i = 0; i < persons.length; i++) {
+      for (var j = 0; j < items.length; j++) {
+        if (persons[i].col == items[j].col && persons[i].row == items[j].row) {
+          items[j].mesh?.dispose();
+          items.splice(j, 1);
+          console.log("tree");
+        }
+      }
+    }
+
     stepId++;
+    /*
     if (stepId == 1) {
       resetMap(scene);
-    }
+    }*/
   }, 1000);
 
   // Run render loop
