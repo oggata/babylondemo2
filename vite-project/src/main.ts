@@ -254,9 +254,11 @@ const main = async () => {
   new HemisphericLight("light1", new Vector3(0, 0.1, 0), scene);
 
   // Add a camera for the non-VR view in browser
-  const camera = new ArcRotateCamera("Camera", -(Math.PI / 4) * 3, Math.PI / 4, 50, new Vector3(0, 0, 0), scene);
+  const camera = new ArcRotateCamera("Camera", -(Math.PI / 4) * 3, Math.PI / 4, 50, new Vector3(5, 4, 2), scene);
+  //camera.setTarget(Vector3.Zero());
   camera.attachControl(true);
-
+  //var camera = new BABYLON.ArcRotateCamera("camera", 10, 10, 10, new BABYLON.Vector3(0, 10, 0), scene);
+  //camera.setTarget(BABYLON.Vector3.Zero());
   // GUI
   var advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
   var button1 = GUI.Button.CreateSimpleButton("but1", "Reset Map");
@@ -325,6 +327,9 @@ const main = async () => {
         //console.log("direction>" + d);
         var isSetTraget = false;
         if (d == 1) {
+
+          //進めるかを確認する
+
           if (persons[j].targetCol + 1 < MAP_SIZE) {
             persons[j].targetCol = persons[j].targetCol + 1;
             isSetTraget = true;
