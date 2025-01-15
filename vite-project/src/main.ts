@@ -14,14 +14,12 @@ import { Scene } from "@babylonjs/core/scene.js";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.js";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector.js";
 import { WebXRDefaultExperience } from "@babylonjs/core/XR/webXRDefaultExperience.js";
-
 //import * as BABYLON from "@babylonjs/core";
 import * as GUI from "@babylonjs/gui";
 
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
-
 
 // Required for EnvironmentHelper
 import "@babylonjs/core/Materials/Textures/Loaders";
@@ -38,14 +36,17 @@ import "@babylonjs/core/Materials/Node/Blocks";
 // XR ボタンを右下に表示させるために必須
 import "@babylonjs/core/Helpers/sceneHelpers";
 
-function getRand(from, to) {
+function getRand(from: number, to: number) {
   return from + Math.floor(Math.random() * (to - from + 1));
 };
 
 const BASE_URL = "https://cx20.github.io/gltf-test";
 
+function orgFloor(value: number, base: number) {
+  return Math.floor(value * base) / base;
+}
 
-const llmchain_invoke = async (sentences_before_check: string) => {
+const llmchain_invoke = async (map_create_prompt: string) => {
   // OpenAIのモデルのインスタンスを作成
   const chatModel = new ChatOpenAI({
     openAIApiKey: "",
@@ -54,18 +55,29 @@ const llmchain_invoke = async (sentences_before_check: string) => {
   // プロンプトのテンプレート文章を定義
   const template = `
   条件:
-    マップサイズ: 30x30
+    マップサイズ: 60x60
     マップの要素: 0:緑地, 1:道路, 2:川, 3:木, 4:丘
+    マップ要素の意味：緑地は -- 道路は -- 川は -- 木は -- 丘は --
     出力形式：要素番号を順番に配列で書き出し 例[1,0,1,0,2,2,3,1,4]
-    ルール：道路はなるべく繋げてください。
+    ルール：道路はなるべく繋げてください。建物はプレイヤーが休める場所です。
     マップの上部は丘になるようにしてください
-    その他の条件：{sentences_before_check}
+    その他の条件：{map_create_prompt}
 `;
+
+  const template2 = `
+  条件：
+  `;
 
   // テンプレート文章にあるチェック対象の単語を変数化
   const prompt = ChatPromptTemplate.fromMessages([
     ["system", "あなたはRPGマップ生成の専門家です。自然で魅力的なマップを下記の条件で作成して、結果の配列だけを返してください。"],
     ["user", template],
+  ]);
+
+  // テンプレート文章にあるチェック対象の単語を変数化
+  const prompt2 = ChatPromptTemplate.fromMessages([
+    ["system", "あなたはマップデータと、自分の位置を受け取って、目的によって、どの方向に進むべきかを都度、考えてください。"],
+    ["user", template2],
   ]);
 
   // チャットメッセージを文字列に変換するための出力解析インスタンスを作成
@@ -76,31 +88,24 @@ const llmchain_invoke = async (sentences_before_check: string) => {
 
   // 関数を実行
   return await llmChain.invoke({
-    sentences_before_check: sentences_before_check,
+    map_create_prompt: map_create_prompt,
   });
 };
 
-var PartsArray: { dispose: () => void; }[] | Mesh[] = [];
+var MAP_SIZE = 20;
+var NPC_COUNT = 5;
+var partsArray: { dispose: () => void; }[] | Mesh[] = [];
 var chipArray: {
-  var1: string; id: number; type: number; col: number; row: number; posX: number; posY: number; posZ: number;
-  // func メソッドを登録
-  func: () => void;
+  id: number; type: number; col: number; row: number;
 }[] = [];
 function resetMap(scene: Scene) {
-  for (var i = 0; i < PartsArray.length; i++) {
-    PartsArray[i].dispose();
+  for (var i = 0; i < partsArray.length; i++) {
+    partsArray[i].dispose();
   }
-  PartsArray = [];
+  partsArray = [];
   generateMap(scene);
 };
 
-/*
-var persons: {
-  setIsTargetAvailable(arg0: boolean): unknown;
-  getIsTargetAvailable(): boolean;
-  id: number; col: number; row: number; targetCol: number; targetRow: number; isTargetAvailable: boolean; mesh: AbstractMesh
-}[] = [];
-*/
 const persons: Person[] = [];
 
 class Person {
@@ -133,26 +138,46 @@ class Person {
   }
 }
 
-function createNPC(scene: Nullable<Scene> | undefined) {
-  SceneLoader.ImportMesh("", BASE_URL + "/sampleModels/Fox/glTF/", "Fox.gltf", scene, function (newMeshes, particleSystems, skeletons, animationGroups) {
-    var mesh = newMeshes[0];
-    mesh.scaling = new Vector3(0.05, 0.05, -0.05);
-    mesh.rotation = Vector3.Zero();
-    //最初の場所
-    const targetNum = getRand(10, 500);
-    const chip = chipArray[targetNum];
-    console.log("first target is [num:" + targetNum + "/col:" + chip.col + "/row:" + chip.row + "]");
-    var p: Person = new Person(targetNum, chip.col, chip.row);
-    p.setMesh(mesh);
-    mesh.position.x = chip.col;
-    mesh.position.z = chip.row;
-    persons.push(p);
-  });
+function createNPC(scene: Scene) {
+  var boxSize = { width: 1, height: 3, depth: 1 };
+  var mesh = MeshBuilder.CreateBox("box", boxSize);
+  //mesh.scaling = new Vector3(0.05, 0.05, -0.05);
+  mesh.rotation = Vector3.Zero();
+  //最初の場所
+  const targetNum = getRand(1, MAP_SIZE * MAP_SIZE);
+  const chip = chipArray[targetNum];
+  //console.log("first target is [num:" + targetNum + "/col:" + chip.col + "/row:" + chip.row + "]");
+  var p: Person = new Person(targetNum, chip.col, chip.row);
+  p.setMesh(mesh);
+  mesh.position.x = chip.col;
+  mesh.position.y = 0;
+  mesh.position.z = chip.row;
+  const Material = new StandardMaterial("material", scene);
+  Material.diffuseColor = Color3.Random();
+  mesh.material = Material;
+  persons.push(p);
+  /*
+    SceneLoader.ImportMesh("", BASE_URL + "/sampleModels/Fox/glTF/", "Fox.gltf", scene, function (newMeshes, particleSystems, skeletons, animationGroups) {
+      var mesh = newMeshes[0];
+      mesh.scaling = new Vector3(0.05, 0.05, -0.05);
+      mesh.rotation = Vector3.Zero();
+      //最初の場所
+      const targetNum = getRand(10, 500);
+      const chip = chipArray[targetNum];
+      console.log("first target is [num:" + targetNum + "/col:" + chip.col + "/row:" + chip.row + "]");
+      var p: Person = new Person(targetNum, chip.col, chip.row);
+      p.setMesh(mesh);
+      mesh.position.x = chip.col;
+      mesh.position.z = chip.row;
+      persons.push(p);
+    });
+    */
 }
 
+
+
 function generateMap(scene: Scene) {
-  var mapWidth = 50;
-  var chipNum = 1;
+  var bid = 1;
   //1: 平地 2:道路 3:川 4:木 5:石 6:家
   const Material1 = new StandardMaterial("material", scene);
   Material1.diffuseColor = new Color3(100 / 256, 200 / 256, 100 / 256);
@@ -167,68 +192,52 @@ function generateMap(scene: Scene) {
   const Material6 = new StandardMaterial("material", scene);
   Material6.diffuseColor = new Color3(10 / 256, 20 / 256, 100 / 256);
   //boxMaterial.diffuseColor = Color3.Random();
-  for (var row = 1; row <= mapWidth; row++) {
-    for (var col = 1; col <= mapWidth; col++) {
-      //1: 平地 2:道路 3:川 4:木 5:石 6:家
-      var chipType = getRand(1, 4);
-      var colPos = col * 1;
-      var rowPos = row * 1;
-      const boxSize2 = { width: 1, height: 1, depth: 1 };
-      var box = MeshBuilder.CreateBox("box", boxSize2);
-      PartsArray.push(box);
-      box.position.x = colPos;
-      box.position.z = rowPos;
-      var chipObj = {
-        var1: "",
+  for (var row = 1; row <= MAP_SIZE; row++) {
+    for (var col = 1; col <= MAP_SIZE; col++) {
+      var box = MeshBuilder.CreateBox("box", { width: 1, height: 1, depth: 1 });
+      partsArray.push(box);
+      box.position.x = col;
+      box.position.z = row;
+      const b = {
         id: 0,
         type: 0,
         col: 0,
-        row: 0,
-        posX: 0,
-        posY: 0,
-        posZ: 0,
-        // func メソッドを登録
-        func: function () {
-          alert("world");
-        }
-      };
-      //var chipObj = chipObj;
-      const demo = chipObj;
-      demo.id = chipNum;
-      demo.type = chipType;
-      demo.col = col;
-      demo.row = row;
-      chipArray.push(demo);
-      // = chipType;
-      if (chipType == 1) {
+        row: 0
+      };;
+      b.id = bid;
+      //1: 平地 2:道路 3:川 4:木 5:石 6:家
+      b.type = getRand(1, 4);
+      b.col = col;
+      b.row = row;
+      chipArray.push(b);
+      if (b.type == 1) {
         box.material = Material1;
         box.position.y = 0;
-      } else if (chipType == 2) {
+      } else if (b.type == 2) {
         box.material = Material2;
         box.position.y = 0.2;
-      } else if (chipType == 3) {
+      } else if (b.type == 3) {
         box.material = Material3;
         box.position.y = -0.4;
-      } else if (chipType == 4) {
+      } else if (b.type == 4) {
         box.material = Material4;
         box.position.y = 0.5;
-      } else if (chipType == 5) {
+      } else if (b.type == 5) {
         box.material = Material5;
         box.position.y = 0;
-      } else if (chipType == 6) {
+      } else if (b.type == 6) {
         box.position.y = 0;
         box.material = Material6;
       } else {
         box.position.y = 0;
         box.material = Material1;
       }
-      chipNum++;
+      bid++;
     }
   }
-
-  createNPC(scene);
-  createNPC(scene);
-  //createNPC(scene)
+  for (var k = 0; k < NPC_COUNT; k++) {
+    createNPC(scene);
+  }
 }
 
 const main = async () => {
@@ -260,7 +269,7 @@ const main = async () => {
     //alert("you did it!");
     resetMap(scene);
   });
-  advancedTexture.addControl(button1);
+  //advancedTexture.addControl(button1);
 
   //地面
   var ground = Mesh.CreateGround("ground1", 2000, 2000, 2, scene);
@@ -270,38 +279,53 @@ const main = async () => {
   ground.receiveShadows = true;
   ground.checkCollisions = true;
 
+
+  //llmchain_invoke("aaa");
+  //var aa = await llmchain_invoke("aaa");
+  //console.log(aa);
+
   var stepId = 0;
   setInterval(function () {
     for (var j = 0; j < persons.length; j++) {
-      if (persons[j].mesh != undefined) {
-        if (persons[j].mesh.position.x < persons[j].targetCol) {
-          persons[j].mesh.position.x += 1;
-          //persons[j].mesh.rotate(new Vector3(persons[j].mesh.position.x, persons[j].mesh.position.y, persons[j].mesh.position.z), Math.PI / 180 * 90, Space.LOCAL);
-        }
-        if (persons[j].mesh.position.x > persons[j].targetCol) {
-          persons[j].mesh.position.x -= 1;
-        }
-        if (persons[j].mesh.position.z < persons[j].targetRow) {
-          persons[j].mesh.position.z += 1;
-        }
-        if (persons[j].mesh.position.z > persons[j].targetRow) {
-          persons[j].mesh.position.z -= 1;
-        }
 
-        if (persons[j].mesh.position.x == persons[j].targetCol
-          && persons[j].mesh.position.z == persons[j].targetRow
+      //console.log(orgFloor(2.1234, 1));
+      var speed = 0.1;
+      if (persons[j].mesh != undefined) {
+        if (orgFloor(persons[j].mesh.position.x, 1) == persons[j].targetCol
+          && orgFloor(persons[j].mesh.position.z, 1) == persons[j].targetRow
           && persons[j].getIsTargetAvailable() == true) {
           persons[j].setIsTargetAvailable(false);
           persons[j].col = persons[j].targetCol;
           persons[j].row = persons[j].targetRow;
         }
+
+        if (orgFloor(persons[j].mesh.position.x, 1) < persons[j].targetCol) {
+          persons[j].mesh.position.x += speed;
+          //persons[j].mesh.rotate(new Vector3(persons[j].mesh.position.x, persons[j].mesh.position.y, persons[j].mesh.position.z), Math.PI / 180 * 90, Space.LOCAL);
+        }
+        if (orgFloor(persons[j].mesh.position.x, 1) > persons[j].targetCol) {
+          //persons[j].mesh.position.x -= orgFloor(0.1, 10);
+          persons[j].mesh.position.x -= speed;
+        }
+        if (orgFloor(persons[j].mesh.position.z, 1) < persons[j].targetRow) {
+          //persons[j].mesh.position.z += orgFloor(0.1, 10);
+          persons[j].mesh.position.z += speed;
+        }
+        if (orgFloor(persons[j].mesh.position.z, 1) > persons[j].targetRow) {
+          //persons[j].mesh.position.z -= orgFloor(0.1, 10);
+          persons[j].mesh.position.z -= speed;
+        }
       }
       if (persons[j].getIsTargetAvailable() == false && chipArray.length > 0) {
+        //Agentに移動の目的を伝える
+
+        //マップデータと自分の位置情報を渡した上で、どの方向に進むべきかを考える
+
         var d = getRand(1, 4);
-        console.log("direction>" + d);
+        //console.log("direction>" + d);
         var isSetTraget = false;
         if (d == 1) {
-          if (persons[j].targetCol + 1 < 30) {
+          if (persons[j].targetCol + 1 < MAP_SIZE) {
             persons[j].targetCol = persons[j].targetCol + 1;
             isSetTraget = true;
           }
@@ -313,7 +337,7 @@ const main = async () => {
           }
         }
         if (d == 3) {
-          if (persons[j].targetRow + 1 < 30) {
+          if (persons[j].targetRow + 1 < MAP_SIZE) {
             persons[j].targetRow = persons[j].targetRow + 1;
             isSetTraget = true;
           }
@@ -328,10 +352,13 @@ const main = async () => {
           persons[j].setIsTargetAvailable(true);
         }
       }
-      console.log("step:" + stepId + "/" + persons[j].getIsTargetAvailable() + "/x:" + persons[j].mesh.position.x + "/col:" + persons[j].col + "/tcol:" + persons[j].targetCol + "/y:" + persons[j].mesh.position.y + "/row:" + persons[j].row + "/trow:" + persons[j].targetRow);
+      //console.log("step:" + stepId + "/" + persons[j].getIsTargetAvailable() + "/x:" + persons[j].mesh.position.x + "/col:" + persons[j].col + "/tcol:" + persons[j].targetCol + "/y:" + persons[j].mesh.position.y + "/row:" + persons[j].row + "/trow:" + persons[j].targetRow);
     }
     stepId++;
-  }, 400);
+    if (stepId == 1) {
+      resetMap();
+    }
+  }, 30);
 
   // Run render loop
   babylonEngine.runRenderLoop(() => {
