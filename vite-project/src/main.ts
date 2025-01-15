@@ -123,7 +123,7 @@ class Person {
 }
 
 function createNPC(scene: Scene) {
-  var boxSize = { width: 1, height: 3, depth: 1 };
+  var boxSize = { width: 0.2, height: 4, depth: 0.2 };
   var mesh = MeshBuilder.CreateBox("box", boxSize);
   //mesh.scaling = new Vector3(0.05, 0.05, -0.05);
   mesh.rotation = Vector3.Zero();
@@ -314,7 +314,7 @@ const main = async () => {
   setInterval(function () {
     for (var j = 0; j < persons.length; j++) {
       //console.log(orgFloor(2.1234, 1));
-      var speed = 0.1;
+      var speed = 1;
       if (persons[j].mesh != undefined) {
         if (orgFloor(persons[j].mesh!.position.x, 1) < persons[j].targetCol) {
           persons[j].mesh!.position.x += speed;
@@ -337,6 +337,7 @@ const main = async () => {
           persons[j].row = persons[j].targetRow;
         }
       }
+      console.log(persons[j].col + "-" + persons[j].row + "/" + persons[j].targetCol + "-" + persons[j].targetRow + " " + persons[j].isTargetAvailable);
       if (persons[j].getIsTargetAvailable() == false && chipArray.length > 0) {
         //Agentに移動の目的を伝える
 
