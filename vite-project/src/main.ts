@@ -8,7 +8,7 @@ import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight.js";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder.js";
 //import { MeshLoader } from "@babylonjs/core/Meshes/MeshLoader.js";
-import { _OcclusionDataStorage, AbstractMesh } from "@babylonjs/core";
+import { _OcclusionDataStorage, AbstractMesh, SceneLoader } from "@babylonjs/core";
 
 import { Scene } from "@babylonjs/core/scene.js";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.js";
@@ -42,9 +42,9 @@ function orgFloor(value: number, base: number) {
 }
 
 var MAP_SIZE = 30;
-var NPC_COUNT = 15;
-var ENEMY_COUNT = 25;
-var ITEM_COUNT = 40;
+var NPC_COUNT = 2;
+var ENEMY_COUNT = 2;
+var ITEM_COUNT = 15;
 var MAP_ARRAY: any[] = [];
 var MAP_ARRAY2 = [6, 6, 6, 5, 7, 2, 1, 4, 3, 1, 1, 3, 2, 7, 7, 3, 2, 4, 6, 5, 6, 5, 6, 7, 7, 5, 7, 4, 5, 1,
   3, 5, 6, 5, 5, 4, 4, 4, 4, 3, 4, 5, 4, 6, 7, 3, 4, 4, 5, 4, 4, 4, 5, 5, 4, 4, 4, 4, 4, 5,
@@ -261,6 +261,7 @@ const llmchain_invoke2 = async (map_create_prompt: string) => {
 
 */
 var partsArray: { dispose: () => void; }[] | Mesh[] = [];
+var partsArray2: { dispose: () => void; }[] | AbstractMesh[] = [];
 var chipArray: {
   id: number; type: number; col: number; row: number;
 }[] = [];
@@ -277,6 +278,7 @@ class Person {
   targetRow: number;
   isTargetAvailable: boolean;
   mesh: AbstractMesh | undefined;
+
   constructor(id: number, col: number, row: number, type: number) {
     this.id = id;
     this.col = col;
@@ -345,33 +347,62 @@ class Item {
 }
 
 function createItem(scene: Scene, type: number) {
-  var boxSize = { width: 0.8, height: 1.5, depth: 0.8 };
-  var mesh = MeshBuilder.CreateBox("box", boxSize);
-  //mesh.scaling = new Vector3(0.05, 0.05, -0.05);
-  mesh.rotation = Vector3.Zero();
-  partsArray.push(mesh);
-  const Material1 = new StandardMaterial("material", scene);
-  Material1.diffuseColor = Color3.FromHexString('#525B44');
-  const Material2 = new StandardMaterial("material", scene);
-  Material2.diffuseColor = Color3.FromHexString('#525B44');
-  if (type == 1) {
-    mesh.material = Material1;
-  } else if (type == 2) {
-    mesh.material = Material2;
-  }
-  //最初の場所
-  const targetNum = getRand(1, MAP_SIZE * MAP_SIZE);
-  const chip = chipArray[targetNum];
-  var i: Item = new Item(targetNum, chip.col, chip.row, 1);
-  i.setMesh(mesh);
+  //var boxSize = { width: 0.8, height: 1.5, depth: 0.8 };
 
-  var c = getChip(chip.col, chip.row);
-  var h = c!.type;
+  SceneLoader.ImportMesh(
+    "", "" + "./public/glb/", "Tree.glb?" + type,
+    scene, function (newMeshes) {
+      var mesh = newMeshes[0];
+      //var num = type;
+      //mesh.scaling = new Vector3(0.3, 0.3, -0.3);
+      //mesh.rotation = Vector3.Zero();
+      if (mesh != undefined) {
+        partsArray2.push(mesh);
+      }
+      const targetNum = getRand(1, MAP_SIZE * MAP_SIZE);
+      const chip = chipArray[targetNum];
+      var i: Item = new Item(targetNum, chip.col, chip.row, 1);
+      i.setMesh(mesh);
 
-  mesh.position.x = chip.col;
-  mesh.position.y = h / 3;
-  mesh.position.z = chip.row;
-  items.push(i);
+      var c = getChip(chip.col, chip.row);
+      var h = c!.type;
+
+      mesh.position.x = chip.col;
+      mesh.position.y = h / 2;
+      mesh.position.z = chip.row;
+      items.push(i);
+    }
+  );
+
+  /*
+    var mesh = MeshBuilder.CreateBox("box", boxSize);
+    //mesh.scaling = new Vector3(0.05, 0.05, -0.05);
+    mesh.rotation = Vector3.Zero();
+    partsArray.push(mesh);
+    const Material1 = new StandardMaterial("material", scene);
+    Material1.diffuseColor = Color3.FromHexString('#525B44');
+    const Material2 = new StandardMaterial("material", scene);
+    Material2.diffuseColor = Color3.FromHexString('#525B44');
+    if (type == 1) {
+      mesh.material = Material1;
+    } else if (type == 2) {
+      mesh.material = Material2;
+    }
+    //最初の場所
+    const targetNum = getRand(1, MAP_SIZE * MAP_SIZE);
+    const chip = chipArray[targetNum];
+    var i: Item = new Item(targetNum, chip.col, chip.row, 1);
+    i.setMesh(mesh);
+  
+    var c = getChip(chip.col, chip.row);
+    var h = c!.type;
+  
+    mesh.position.x = chip.col;
+    mesh.position.y = h / 3;
+    mesh.position.z = chip.row;
+    items.push(i);
+  */
+
 }
 
 function setMeshPosition(mesh: AbstractMesh, col: number, row: number) {
@@ -391,53 +422,51 @@ function setFirstTargetNums() {
   }
 }
 
+
 function createNPC(scene: Scene, type: number) {
-  var boxSize = { width: 0.2, height: 1, depth: 0.2 };
-  var mesh = MeshBuilder.CreateBox("box", boxSize);
-  //mesh.scaling = new Vector3(0.05, 0.05, -0.05);
-  mesh.rotation = Vector3.Zero();
-  partsArray.push(mesh);
-  const Material1 = new StandardMaterial("material", scene);
-  Material1.diffuseColor = Color3.White();
-  const Material2 = new StandardMaterial("material", scene);
-  Material2.diffuseColor = Color3.Red();
-  if (type == 1) {
-    mesh.material = Material1;
-  } else if (type == 2) {
-    mesh.material = Material2;
-  }
-
-  var t = getRand(1, FirstTargetNums.length);
-  var targetNum = FirstTargetNums[t];
-  const chip = chipArray[targetNum];
-
-  var p: Person = new Person(targetNum, chip.col, chip.row, type);
-  p.setMesh(mesh);
-  persons.push(p);
-  setMeshPosition(mesh, chip.col, chip.row);
-  /*
-    SceneLoader.ImportMesh("", BASE_URL + "/sampleModels/Fox/glTF/", "Fox.gltf", scene, function (newMeshes, particleSystems, skeletons, animationGroups) {
+  //var boxSize = { width: 0.2, height: 1, depth: 0.2 };
+  //var mesh = MeshBuilder.CreateBox("box", boxSize);
+  //var animForward: AnimationGroup;
+  SceneLoader.ImportMesh(
+    "", "" + "./public/glb/", "Animated_Human.glb",
+    scene, function (newMeshes) {
       var mesh = newMeshes[0];
-      mesh.scaling = new Vector3(0.05, 0.05, -0.05);
+      //var walkAnimation = scene.getAnimationGroupByName("Run");
+      //walkAnimation?.start();
+      mesh.scaling = new Vector3(0.15, 0.15, 0.15);
       mesh.rotation = Vector3.Zero();
-      //最初の場所
-      const targetNum = getRand(10, 500);
+      partsArray2.push(mesh);
+      const Material1 = new StandardMaterial("material", scene);
+      Material1.diffuseColor = Color3.White();
+      const Material2 = new StandardMaterial("material", scene);
+      Material2.diffuseColor = Color3.Red();
+      if (type == 1) {
+        mesh.material = Material1;
+      } else if (type == 2) {
+        mesh.material = Material2;
+      }
+
+      var t = getRand(1, FirstTargetNums.length);
+      var targetNum = FirstTargetNums[t];
       const chip = chipArray[targetNum];
-      //console.log("first target is [num:" + targetNum + "/col:" + chip.col + "/row:" + chip.row + "]");
-      var p: Person = new Person(targetNum, chip.col, chip.row);
+
+      var p: Person = new Person(targetNum, chip.col, chip.row, type);
       p.setMesh(mesh);
-      mesh.position.x = chip.col;
-      mesh.position.z = chip.row;
       persons.push(p);
-    });
-    */
+      setMeshPosition(mesh, chip.col, chip.row);
+    }
+  );
 }
 
 function resetMap(scene: Scene) {
   for (var i = 0; i < partsArray.length; i++) {
     partsArray[i].dispose();
   }
+  for (var i = 0; i < partsArray2.length; i++) {
+    partsArray2[i].dispose();
+  }
   partsArray = [];
+  partsArray2 = [];
   persons = [];
   items = [];
 
@@ -710,14 +739,14 @@ scoreBlock = new BABYLON.GUI.TextBlock();
           0,0,0,
           0,0,0,
         */
-        var type1 = getObjectType(persons[j].col - 1, persons[j].row + 1);
+        //var type1 = getObjectType(persons[j].col - 1, persons[j].row + 1);
         var type2 = getObjectType(persons[j].col + 0, persons[j].row + 1);
-        var type3 = getObjectType(persons[j].col + 1, persons[j].row + 1);
+        //var type3 = getObjectType(persons[j].col + 1, persons[j].row + 1);
         var type4 = getObjectType(persons[j].col - 1, persons[j].row + 0);
         var type5 = getObjectType(persons[j].col + 1, persons[j].row + 0);
-        var type6 = getObjectType(persons[j].col - 1, persons[j].row - 1);
+        //var type6 = getObjectType(persons[j].col - 1, persons[j].row - 1);
         var type7 = getObjectType(persons[j].col + 0, persons[j].row - 1);
-        var type8 = getObjectType(persons[j].col + 1, persons[j].row - 1);
+        //var type8 = getObjectType(persons[j].col + 1, persons[j].row - 1);
         var d = getRand(1, 4);
         if (type2 != 0) {
           d = 3;
@@ -740,6 +769,7 @@ scoreBlock = new BABYLON.GUI.TextBlock();
           var isPass = chkMapChip(persons[j].targetCol + 1, persons[j].targetRow, persons[j].col, persons[j].row);
           if (isPass == true) {
             persons[j].targetCol = persons[j].targetCol + 1;
+            //persons[j].mesh?.rotate(Axis.Y, Math.PI / 2 * 1, Space.LOCAL);
             isSetTraget = true;
           }
         }
@@ -794,12 +824,54 @@ scoreBlock = new BABYLON.GUI.TextBlock();
       }
     }
     stepId++;
-  }, 30);
+    /*
+        var run: Nullable<AnimationGroup>;
+        if (stepId == 1) {
+          run = scene.getAnimationGroupByName("Run");
+        }
+        if (stepId % 15 == 0) {
+          //const run = scene.getAnimationGroupByName("Run");
+          console.log(">>");
+          console.log(run);
+          scene.onBeforeRenderObservable.add(() => {
+            //character.moveWithCollisions(character.forward.scaleInPlace(1.05));
+            if (run != null) {
+              run!.start(true, 1.6, run!.from, run!.to, false);
+            }
+          });
+        }
+    */
+  }, 300);
+
+
+
+  /*
+  var walkAnimation;
+  if (stepId == 60) {
+    walkAnimation = scene.getAnimationGroupByName("Run");
+  }
+  if (stepId > 70 && stepId % 35 == 0) {
+    if (walkAnimation != null) {
+      walkAnimation.start(true, 1.0, walkAnimation.from, walkAnimation.to, true);
+    }
+  }*/
+
+  //scene.onBeforeRenderObservable.add(() => {
+  //walkAnimation.start(true, 1.0, walkAnimation.from, walkAnimation.to, true);
+
+
+
+  //});
+  //});
 
   // Run render loop
   babylonEngine.runRenderLoop(() => {
     scene.render();
   });
+
+
 }
+
+
 
 main();
