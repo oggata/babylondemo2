@@ -8,7 +8,7 @@ import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight.js";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder.js";
 //import { MeshLoader } from "@babylonjs/core/Meshes/MeshLoader.js";
-import { _OcclusionDataStorage, AbstractMesh, SceneLoader } from "@babylonjs/core";
+import { _OcclusionDataStorage, AbstractMesh, SceneLoader, Axis, Space } from "@babylonjs/core";
 
 import { Scene } from "@babylonjs/core/scene.js";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.js";
@@ -197,6 +197,11 @@ const llmchain_invoke2 = async (map_create_prompt: string) => {
 
   const template = `
   条件:
+      あなたはゲームのNPCです。あらかじめ与えられたマップの条件と、視野を元に、東西南北のどの方向に
+      進めば良いかを意思決定してください。
+      基本的なロジックは、プレイヤーが視野に入るまでは巡回行動を取ります。
+      一定の区間を巡回するように動いてください。
+      プレイヤーが視野に入った場合、プレイヤーを追いかけるような行動を取ってください。
     ルール：
       視野から得られる情報は、自分から見て東西南北にあるオブジェクトの情報を配列にしたものです。
       9の番号が自分の位置です。
@@ -243,7 +248,7 @@ const llmchain_invoke2 = async (map_create_prompt: string) => {
 
   // テンプレート文章にあるチェック対象の単語を変数化
   const prompt = ChatPromptTemplate.fromMessages([
-    ["system", "あなたはゲームのNPCです。マップ上を上下左右の方向に動くことができます。視野から得られる情報をもとに、結果情報として、進む方角を東西南北の番号で返してください。"],
+    ["system", ""],
     ["user", template],
   ]);
 
@@ -278,6 +283,7 @@ class Person {
   targetRow: number;
   isTargetAvailable: boolean;
   mesh: AbstractMesh | undefined;
+  direction: string;
 
   constructor(id: number, col: number, row: number, type: number) {
     this.id = id;
@@ -287,6 +293,7 @@ class Person {
     this.targetRow = row;
     this.isTargetAvailable = false;
     this.type = type;
+    this.direction = "n";
     if (type == 1) {
       this.tickId = getRand(1, 10);
     } else {
@@ -311,6 +318,19 @@ class Person {
     var c = getChip(col, row);
     var h = c!.type;
     this.mesh!.position.y = h / 2;
+  }
+  setDirection(direction: string) {
+    //console.log(this.mesh?.getDirectionToRef);
+    this.direction = direction;
+    if (this.direction == "n") {
+      this.mesh?.rotate(Axis.Y, Math.PI / 2 * 1, Space.LOCAL);
+    } else if (this.direction == "s") {
+      this.mesh?.rotate(Axis.Y, Math.PI / 2 * 1, Space.LOCAL);
+    } else if (this.direction == "w") {
+      this.mesh?.rotate(Axis.Y, Math.PI / 2 * 1, Space.LOCAL);
+    } else if (this.direction == "e") {
+      this.mesh?.rotate(Axis.Y, Math.PI / 2 * 1, Space.LOCAL);
+    }
   }
 }
 
@@ -760,17 +780,17 @@ scoreBlock = new BABYLON.GUI.TextBlock();
         if (type7 != 0) {
           d = 4;
         }
-
+        d = 2;
         //マップデータと自分の位置情報を渡した上で、どの方向に進むべきかを考える
-
+        persons[j].setDirection("n");
         var isSetTraget = false;
         if (d == 1) {
           //進めるかを確認する
           var isPass = chkMapChip(persons[j].targetCol + 1, persons[j].targetRow, persons[j].col, persons[j].row);
           if (isPass == true) {
             persons[j].targetCol = persons[j].targetCol + 1;
-            //persons[j].mesh?.rotate(Axis.Y, Math.PI / 2 * 1, Space.LOCAL);
             isSetTraget = true;
+            //persons[j].setDirection("e");
           }
         }
         if (d == 2) {
@@ -778,6 +798,7 @@ scoreBlock = new BABYLON.GUI.TextBlock();
           if (isPass == true) {
             persons[j].targetCol = persons[j].targetCol - 1;
             isSetTraget = true;
+            //persons[j].setDirection("w");
           }
         }
         if (d == 3) {
@@ -785,6 +806,7 @@ scoreBlock = new BABYLON.GUI.TextBlock();
           if (isPass == true) {
             persons[j].targetRow = persons[j].targetRow + 1;
             isSetTraget = true;
+            //persons[j].setDirection("n");
           }
         }
         if (d == 4) {
@@ -792,6 +814,7 @@ scoreBlock = new BABYLON.GUI.TextBlock();
           if (isPass == true) {
             persons[j].targetRow = persons[j].targetRow - 1;
             isSetTraget = true;
+            //persons[j].setDirection("s");
           }
         }
         if (isSetTraget == true) {

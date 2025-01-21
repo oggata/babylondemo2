@@ -1,10 +1,23 @@
-# babylondemo2
-
-
-https://oggata.github.io/babylondemo2/vite-project/dist/assets/index-BmEN4qbW.js
+# retro agent demo
 
 https://oggata.github.io/babylondemo2/vite-project/dist/index.html
 
+# glb files
+
 https://poly.pizza/m/6Yjt8nIwLsD
 
+# console
+
 <script src="https://iwb.jp/s/js/tiny-console.js"></script>
+
+
+# run console
+
+$ npm run dev
+
+# build
+
+$ npm run build
+
+cd /workspaces/babylondemo2/
+cp  -pR ./vite-project/dist/* ./
