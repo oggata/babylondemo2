@@ -21,3 +21,5 @@ $ npm run build
 
 cd /workspaces/babylondemo2/
 cp  -pR ./vite-project/dist/* ./
+cp  -pR ./vite-project/public/ ./
+

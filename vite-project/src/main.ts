@@ -370,7 +370,7 @@ function createItem(scene: Scene, type: number) {
   //var boxSize = { width: 0.8, height: 1.5, depth: 0.8 };
 
   SceneLoader.ImportMesh(
-    "", "" + "./public/glb/", "Tree.glb?" + type,
+    "", "" + "./glb/", "Tree.glb?" + type,
     scene, function (newMeshes) {
       var mesh = newMeshes[0];
       //var num = type;
@@ -448,7 +448,7 @@ function createNPC(scene: Scene, type: number) {
   //var mesh = MeshBuilder.CreateBox("box", boxSize);
   //var animForward: AnimationGroup;
   SceneLoader.ImportMesh(
-    "", "" + "./public/glb/", "Animated_Human.glb",
+    "", "" + "./glb/", "Animated_Human.glb",
     scene, function (newMeshes) {
       var mesh = newMeshes[0];
       //var walkAnimation = scene.getAnimationGroupByName("Run");
