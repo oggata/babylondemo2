@@ -35,15 +35,13 @@ function getRand(from: number, to: number) {
   return from + Math.floor(Math.random() * (to - from + 1));
 };
 
-//const BASE_URL = "https://cx20.github.io/gltf-test";
-
 function orgFloor(value: number, base: number) {
   return Math.floor(value * base) / base;
 }
 
 var MAP_SIZE = 30;
-var NPC_COUNT = 2;
-var ENEMY_COUNT = 2;
+var NPC_COUNT = 10;
+var ENEMY_COUNT = 15;
 var ITEM_COUNT = 15;
 var MAP_ARRAY: any[] = [];
 var MAP_ARRAY2 = [6, 6, 6, 5, 7, 2, 1, 4, 3, 1, 1, 3, 2, 7, 7, 3, 2, 4, 6, 5, 6, 5, 6, 7, 7, 5, 7, 4, 5, 1,
@@ -297,7 +295,7 @@ class Person {
     if (type == 1) {
       this.tickId = getRand(1, 10);
     } else {
-      this.tickId = getRand(30, 80);
+      this.tickId = getRand(20, 30);
     }
   }
   setMesh(mesh: AbstractMesh) {
@@ -364,13 +362,24 @@ class Item {
   getIsTargetAvailable() {
     return this.isTargetAvailable;
   }
+  setMeshPosition(col: number, row: number) {
+    this.mesh!.position.x = col;
+    this.mesh!.position.z = row;
+    var c = getChip(col, row);
+    var h = c!.type;
+    this.mesh!.position.y = h / 2;
+  }
 }
 
 function createItem(scene: Scene, type: number) {
   //var boxSize = { width: 0.8, height: 1.5, depth: 0.8 };
+  var fileName = "Tree.glb";
+  if (type == 2) {
+    fileName = "Cottage.glb";
+  }
 
   SceneLoader.ImportMesh(
-    "", "" + "./glb/", "Tree.glb?" + type,
+    "", "" + "./glb/", fileName + "?" + type,
     scene, function (newMeshes) {
       var mesh = newMeshes[0];
       //var num = type;
@@ -390,6 +399,7 @@ function createItem(scene: Scene, type: number) {
       mesh.position.x = chip.col;
       mesh.position.y = h / 2;
       mesh.position.z = chip.row;
+      setMeshPosition(mesh, chip.col, chip.row);
       items.push(i);
     }
   );
@@ -447,8 +457,14 @@ function createNPC(scene: Scene, type: number) {
   //var boxSize = { width: 0.2, height: 1, depth: 0.2 };
   //var mesh = MeshBuilder.CreateBox("box", boxSize);
   //var animForward: AnimationGroup;
+
+  var fileName = "Animated_Human.glb";
+  if (type == 2) {
+    fileName = "Sheep.glb";
+  }
+
   SceneLoader.ImportMesh(
-    "", "" + "./glb/", "Animated_Human.glb",
+    "", "" + "./glb/", fileName,
     scene, function (newMeshes) {
       var mesh = newMeshes[0];
       //var walkAnimation = scene.getAnimationGroupByName("Run");
@@ -462,8 +478,10 @@ function createNPC(scene: Scene, type: number) {
       Material2.diffuseColor = Color3.Red();
       if (type == 1) {
         mesh.material = Material1;
+        mesh.scaling = new Vector3(0.15, 0.15, 0.15);
       } else if (type == 2) {
         mesh.material = Material2;
+        mesh.scaling = new Vector3(0.6, 0.6, 0.6);
       }
 
       var t = getRand(1, FirstTargetNums.length);
@@ -515,6 +533,7 @@ function getChip(col: number, row: number) {
   return null;
 }
 
+/*
 function getObjectType(col: number, row: number) {
   for (var i = 0; i < persons.length; i++) {
     if (persons[i].col == col && persons[i].row == row && persons[i].type > 1) {
@@ -528,7 +547,7 @@ function getObjectType(col: number, row: number) {
   }
   return 0;
 }
-
+*/
 function generateMap(scene: Scene) {
   var bid = 1;
   //1: 平地 2:道路 3:川 4:木
@@ -759,15 +778,18 @@ scoreBlock = new BABYLON.GUI.TextBlock();
           0,0,0,
           0,0,0,
         */
-        //var type1 = getObjectType(persons[j].col - 1, persons[j].row + 1);
-        var type2 = getObjectType(persons[j].col + 0, persons[j].row + 1);
-        //var type3 = getObjectType(persons[j].col + 1, persons[j].row + 1);
-        var type4 = getObjectType(persons[j].col - 1, persons[j].row + 0);
-        var type5 = getObjectType(persons[j].col + 1, persons[j].row + 0);
-        //var type6 = getObjectType(persons[j].col - 1, persons[j].row - 1);
-        var type7 = getObjectType(persons[j].col + 0, persons[j].row - 1);
-        //var type8 = getObjectType(persons[j].col + 1, persons[j].row - 1);
+        /*
+         //var type1 = getObjectType(persons[j].col - 1, persons[j].row + 1);
+         var type2 = getObjectType(persons[j].col + 0, persons[j].row + 1);
+         //var type3 = getObjectType(persons[j].col + 1, persons[j].row + 1);
+         var type4 = getObjectType(persons[j].col - 1, persons[j].row + 0);
+         var type5 = getObjectType(persons[j].col + 1, persons[j].row + 0);
+         //var type6 = getObjectType(persons[j].col - 1, persons[j].row - 1);
+         var type7 = getObjectType(persons[j].col + 0, persons[j].row - 1);
+         //var type8 = getObjectType(persons[j].col + 1, persons[j].row - 1);
+         */
         var d = getRand(1, 4);
+        /*
         if (type2 != 0) {
           d = 3;
         }
@@ -780,9 +802,8 @@ scoreBlock = new BABYLON.GUI.TextBlock();
         if (type7 != 0) {
           d = 4;
         }
-        d = 2;
+        */
         //マップデータと自分の位置情報を渡した上で、どの方向に進むべきかを考える
-        persons[j].setDirection("n");
         var isSetTraget = false;
         if (d == 1) {
           //進めるかを確認する
@@ -790,7 +811,7 @@ scoreBlock = new BABYLON.GUI.TextBlock();
           if (isPass == true) {
             persons[j].targetCol = persons[j].targetCol + 1;
             isSetTraget = true;
-            //persons[j].setDirection("e");
+            persons[j].setDirection("e");
           }
         }
         if (d == 2) {
@@ -798,7 +819,7 @@ scoreBlock = new BABYLON.GUI.TextBlock();
           if (isPass == true) {
             persons[j].targetCol = persons[j].targetCol - 1;
             isSetTraget = true;
-            //persons[j].setDirection("w");
+            persons[j].setDirection("w");
           }
         }
         if (d == 3) {
@@ -806,7 +827,7 @@ scoreBlock = new BABYLON.GUI.TextBlock();
           if (isPass == true) {
             persons[j].targetRow = persons[j].targetRow + 1;
             isSetTraget = true;
-            //persons[j].setDirection("n");
+            persons[j].setDirection("n");
           }
         }
         if (d == 4) {
@@ -814,7 +835,7 @@ scoreBlock = new BABYLON.GUI.TextBlock();
           if (isPass == true) {
             persons[j].targetRow = persons[j].targetRow - 1;
             isSetTraget = true;
-            //persons[j].setDirection("s");
+            persons[j].setDirection("s");
           }
         }
         if (isSetTraget == true) {
@@ -864,7 +885,7 @@ scoreBlock = new BABYLON.GUI.TextBlock();
           });
         }
     */
-  }, 300);
+  }, 100);
 
 
 
