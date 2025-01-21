@@ -38,11 +38,11 @@ function getRand(from: number, to: number) {
 function orgFloor(value: number, base: number) {
   return Math.floor(value * base) / base;
 }
-
+var SCORE = 0;
 var MAP_SIZE = 30;
-var NPC_COUNT = 10;
-var ENEMY_COUNT = 15;
-var ITEM_COUNT = 15;
+var NPC_COUNT = 8;
+var ENEMY_COUNT = 18;
+var ITEM_COUNT = 18;
 var MAP_ARRAY: any[] = [];
 var MAP_ARRAY2 = [6, 6, 6, 5, 7, 2, 1, 4, 3, 1, 1, 3, 2, 7, 7, 3, 2, 4, 6, 5, 6, 5, 6, 7, 7, 5, 7, 4, 5, 1,
   3, 5, 6, 5, 5, 4, 4, 4, 4, 3, 4, 5, 4, 6, 7, 3, 4, 4, 5, 4, 4, 4, 5, 5, 4, 4, 4, 4, 4, 5,
@@ -266,7 +266,7 @@ const llmchain_invoke2 = async (map_create_prompt: string) => {
 var partsArray: { dispose: () => void; }[] | Mesh[] = [];
 var partsArray2: { dispose: () => void; }[] | AbstractMesh[] = [];
 var chipArray: {
-  id: number; type: number; col: number; row: number;
+  id: number; type: number; col: number; row: number; h: number;
 }[] = [];
 var persons: Person[] = [];
 var items: Item[] = [];
@@ -295,7 +295,7 @@ class Person {
     if (type == 1) {
       this.tickId = getRand(1, 10);
     } else {
-      this.tickId = getRand(20, 30);
+      this.tickId = getRand(10, 20);
     }
   }
   setMesh(mesh: AbstractMesh) {
@@ -314,8 +314,7 @@ class Person {
     this.mesh!.position.x = col;
     this.mesh!.position.z = row;
     var c = getChip(col, row);
-    var h = c!.type;
-    this.mesh!.position.y = h / 2;
+    this.mesh!.position.y = c!.h + 0.2;
   }
   setDirection(direction: string) {
     //console.log(this.mesh?.getDirectionToRef);
@@ -366,8 +365,7 @@ class Item {
     this.mesh!.position.x = col;
     this.mesh!.position.z = row;
     var c = getChip(col, row);
-    var h = c!.type;
-    this.mesh!.position.y = h / 2;
+    this.mesh!.position.y = c!.h + 1.2;
   }
 }
 
@@ -392,14 +390,7 @@ function createItem(scene: Scene, type: number) {
       const chip = chipArray[targetNum];
       var i: Item = new Item(targetNum, chip.col, chip.row, 1);
       i.setMesh(mesh);
-
-      var c = getChip(chip.col, chip.row);
-      var h = c!.type;
-
-      mesh.position.x = chip.col;
-      mesh.position.y = h / 2;
-      mesh.position.z = chip.row;
-      setMeshPosition(mesh, chip.col, chip.row);
+      i.setMeshPosition(chip.col, chip.row);
       items.push(i);
     }
   );
@@ -435,13 +426,13 @@ function createItem(scene: Scene, type: number) {
 
 }
 
+/*
 function setMeshPosition(mesh: AbstractMesh, col: number, row: number) {
   var c = getChip(col, row);
-  var h = c!.type;
   mesh.position.x = col;
-  mesh.position.y = h / 2;
+  mesh.position.y = c!.h;
   mesh.position.z = row;
-}
+}*/
 
 var FirstTargetNums: any[] = [];
 function setFirstTargetNums() {
@@ -491,11 +482,11 @@ function createNPC(scene: Scene, type: number) {
       var p: Person = new Person(targetNum, chip.col, chip.row, type);
       p.setMesh(mesh);
       persons.push(p);
-      setMeshPosition(mesh, chip.col, chip.row);
+      p.setMeshPosition(chip.col, chip.row);
     }
   );
 }
-
+var mapid = 1;
 function resetMap(scene: Scene) {
   for (var i = 0; i < partsArray.length; i++) {
     partsArray[i].dispose();
@@ -507,8 +498,13 @@ function resetMap(scene: Scene) {
   partsArray2 = [];
   persons = [];
   items = [];
+  chipArray = [];
 
-  var mapid = getRand(1, 5);
+  //var mapid = getRand(1, 5);
+  mapid++;
+  if (mapid > 5) {
+    mapid = 1;
+  }
   if (mapid == 1) {
     MAP_ARRAY = MAP_ARRAY;
   } else if (mapid == 2) {
@@ -585,17 +581,19 @@ function generateMap(scene: Scene) {
       partsArray.push(box);
       box.position.x = col;
       box.position.z = row;
-      box.position.y = num / 6;
+      box.position.y = objectHight / 2;
       const b = {
         id: 0,
         type: 0,
+        h: 0,
         col: 0,
         row: 0
-      };;
+      };
       b.id = bid;
       b.type = num;
       b.col = col;
       b.row = row;
+      b.h = objectHight;
       chipArray.push(b);
       if (b.type == 1) {
         box.material = Material1;
@@ -672,7 +670,17 @@ const main = async () => {
 
   // GUI
   var advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
-  var button1 = GUI.Button.CreateSimpleButton("but", "Map");
+
+  var scoreBlock = new GUI.TextBlock();
+  scoreBlock.text = SCORE + "pt";
+  scoreBlock.fontSize = 12;
+  scoreBlock.top = 220;
+  //scoreBlock.left = -150;
+  scoreBlock.color = "black";
+  advancedTexture.addControl(scoreBlock);
+
+  /*
+  var button1 = GUI.Button.CreateSimpleButton("but", "GenerateMap");
   button1.width = "60px"
   button1.height = "20px";
   button1.color = "white";
@@ -683,29 +691,23 @@ const main = async () => {
     //alert("you did it!");
     resetMap(scene);
   });
-  var button2 = GUI.Button.CreateSimpleButton("but", "Map");
-  button2.width = "60px"
+  */
+
+  var button2 = GUI.Button.CreateSimpleButton("but", "GenerateMap");
+  button2.width = "200px"
   button2.height = "20px";
   button2.color = "white";
   button2.top = 200;
-  button2.cornerRadius = 10;
+  button2.cornerRadius = 5;
   button2.background = "black";
   button2.onPointerUpObservable.add(function () {
     //alert("you did it!");
     resetMap(scene);
   });
-  advancedTexture.addControl(button1);
+  //advancedTexture.addControl(button1);
   advancedTexture.addControl(button2);
 
-  /*
-scoreBlock = new BABYLON.GUI.TextBlock();
-    scoreBlock.text = point + "pt";
-    scoreBlock.fontSize = 20;
-    scoreBlock.top = -300;
-    scoreBlock.left = -150;
-    scoreBlock.color = "black";
-    advancedTexture.addControl(scoreBlock);
-  */
+
 
   //地面
   var ground = Mesh.CreateGround("ground1", 2000, 2000, 2, scene);
@@ -763,9 +765,9 @@ scoreBlock = new BABYLON.GUI.TextBlock();
           persons[j].setIsTargetAvailable(false);
           persons[j].col = persons[j].targetCol;
           persons[j].row = persons[j].targetRow;
-          var c = getChip(persons[j].targetCol, persons[j].targetRow);
-          var h = c!.type;
-          persons[j].mesh!.position.y = h / 3;
+          //var c = getChip(persons[j].targetCol, persons[j].targetRow);
+          //var h = c!.type;
+          //persons[j].mesh!.position.y = h / 3;
         }
       }
       //console.log(persons[j].col + "-" + persons[j].row + "/" + persons[j].targetCol + "-" + persons[j].targetRow + " " + persons[j].isTargetAvailable);
@@ -853,6 +855,7 @@ scoreBlock = new BABYLON.GUI.TextBlock();
             persons[j].mesh?.dispose();
             persons.splice(j, 1);
             //console.log("eat");
+            SCORE + 10;
           }
         }
       }
@@ -864,6 +867,7 @@ scoreBlock = new BABYLON.GUI.TextBlock();
           items[j].mesh?.dispose();
           items.splice(j, 1);
           //console.log("tree");
+          SCORE + 1;
         }
       }
     }
@@ -885,6 +889,7 @@ scoreBlock = new BABYLON.GUI.TextBlock();
           });
         }
     */
+    scoreBlock.text = SCORE + "pt";
   }, 100);
 
 
