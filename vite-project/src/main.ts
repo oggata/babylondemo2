@@ -671,6 +671,7 @@ const main = async () => {
   // GUI
   var advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
 
+  /*
   var scoreBlock = new GUI.TextBlock();
   scoreBlock.text = SCORE + "pt";
   scoreBlock.fontSize = 12;
@@ -678,6 +679,7 @@ const main = async () => {
   //scoreBlock.left = -150;
   scoreBlock.color = "black";
   advancedTexture.addControl(scoreBlock);
+  */
 
   /*
   var button1 = GUI.Button.CreateSimpleButton("but", "GenerateMap");
@@ -706,8 +708,6 @@ const main = async () => {
   });
   //advancedTexture.addControl(button1);
   advancedTexture.addControl(button2);
-
-
 
   //地面
   var ground = Mesh.CreateGround("ground1", 2000, 2000, 2, scene);
@@ -889,8 +889,8 @@ const main = async () => {
           });
         }
     */
-    scoreBlock.text = SCORE + "pt";
-  }, 100);
+    //scoreBlock.text = SCORE + "pt";
+  }, 300);
 
 
 

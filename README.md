@@ -2,6 +2,9 @@
 
 https://oggata.github.io/retro-agent-demo
 
+# 開発ソース
+/vite-project/src/main.ts
+
 # glb files
 
 //glbファイル
@@ -21,7 +24,8 @@ $ npm run dev
 
 //ビルドする
 $ npm run build
-//distフォルダをカレントに移動
+//distフォルダをカレントに移動ls
+
 $ cd /workspaces/babylondemo2/
 $ cp  -pR ./vite-project/dist/* ./
 $ cp  -pR ./vite-project/glb/ ./
