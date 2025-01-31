@@ -65,7 +65,7 @@ export function generateMap(scene: Scene) {
             var num = Main.MAP_ARRAY[bid];
             var objectHight = num / 3;
             var box = MeshBuilder.CreateBox("box", { width: 1, height: objectHight, depth: 1 });
-            Main.partsArray.push(box);
+            Main.boxArray.push(box);
             box.position.x = col;
             box.position.z = row;
             box.position.y = objectHight / 2;

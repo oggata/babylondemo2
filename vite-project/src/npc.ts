@@ -4,6 +4,7 @@ import * as Main from './main.ts'
 //import { Color3 } from "@babylonjs/core/Maths/math.color.js";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector.js";
 //import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.js";
+import * as Item from './item.ts';
 
 export class Person {
     id: number;
@@ -17,7 +18,9 @@ export class Person {
     mesh: AbstractMesh | undefined;
     direction: string;
     z: number;
-
+    hp: number;
+    attack: number;
+    defence: number;
     constructor(id: number, col: number, row: number, type: number) {
         this.id = id;
         this.col = col;
@@ -28,6 +31,9 @@ export class Person {
         this.type = type;
         this.direction = "n";
         this.z = 0.2;
+        this.hp = 10;
+        this.attack = 1;
+        this.defence = 1;
         if (type == 1) {
             this.tickId = Main.getRand(1, 10);
         } else {
@@ -64,6 +70,134 @@ export class Person {
             this.mesh?.rotate(Axis.Y, Math.PI / 2 * 1, Space.LOCAL);
         }
     }
+    thinkAndAct() {
+        var isMove = true;
+        //前後左右に何があるか把握する
+        for (var j = 0; j < Main.persons.length; j++) {
+            if (Main.persons[j].col == this.col + 1 && Main.persons[j].row == this.row) {
+                isMove = false;
+                this.attackNPC(Main.persons[j]);
+            }
+            if (Main.persons[j].col == this.col - 1 && Main.persons[j].row == this.row) {
+                isMove = false;
+                this.attackNPC(Main.persons[j]);
+            }
+            if (Main.persons[j].col == this.col && Main.persons[j].row == this.row + 1) {
+                isMove = false;
+                this.attackNPC(Main.persons[j]);
+            }
+            if (Main.persons[j].col == this.col && Main.persons[j].row == this.row - 1) {
+                isMove = false;
+                this.attackNPC(Main.persons[j]);
+            }
+        }
+
+        //前後左右に何があるか把握する
+        for (var j = 0; j < Item.items.length; j++) {
+            if (Item.items[j].col == this.col + 1 && Item.items[j].row == this.row) {
+                isMove = false;
+                this.getItem(Item.items[j]);
+            }
+            if (Item.items[j].col == this.col - 1 && Item.items[j].row == this.row) {
+                isMove = false;
+                this.getItem(Item.items[j]);
+            }
+            if (Item.items[j].col == this.col && Item.items[j].row == this.row + 1) {
+                isMove = false;
+                this.getItem(Item.items[j]);
+            }
+            if (Item.items[j].col == this.col && Item.items[j].row == this.row - 1) {
+                isMove = false;
+                this.getItem(Item.items[j]);
+            }
+        }
+
+        //素材があれば何か作る
+
+
+        //何もなければ歩く
+        if (isMove == true) {
+            this.walk();
+        }
+    }
+    getItem(i: Item.Item) {
+        i.hp -= 5;
+    }
+    attackNPC(p: Person) {
+        if (p.type != this.type) {
+            p.hp -= 1;
+        }
+    }
+    create() {
+
+    }
+    walk() {
+        var speed = 1;
+        if (this.mesh != undefined) {
+            if (Main.orgFloor(this.mesh!.position.x, 1) < this.targetCol) {
+                this.setMeshPosition(this.mesh!.position.x + speed, this.mesh!.position.z, this.z);
+            }
+            if (Main.orgFloor(this.mesh!.position.x, 1) > this.targetCol) {
+                this.setMeshPosition(this.mesh!.position.x - speed, this.mesh!.position.z, this.z);
+            }
+            if (Main.orgFloor(this.mesh!.position.z, 1) < this.targetRow) {
+                this.setMeshPosition(this.mesh!.position.x, this.mesh!.position.z + speed, this.z);
+            }
+            if (Main.orgFloor(this.mesh!.position.z, 1) > this.targetRow) {
+                this.setMeshPosition(this.mesh!.position.x, this.mesh!.position.z - speed, this.z);
+            }
+            if (Main.orgFloor(this.mesh!.position.x, 1) == this.targetCol
+                && Main.orgFloor(this.mesh!.position.z, 1) == this.targetRow
+                //&& this.getIsTargetAvailable() == true && stepId % this.tickId == 0) {
+                && this.getIsTargetAvailable() == true) {
+                this.setIsTargetAvailable(false);
+                this.col = this.targetCol;
+                this.row = this.targetRow;
+            }
+        }
+        if (this.getIsTargetAvailable() == false && Main.chipArray.length > 0) {
+            var d = Main.getRand(1, 4);
+            //マップデータと自分の位置情報を渡した上で、どの方向に進むべきかを考える
+            var isSetTraget = false;
+            if (d == 1) {
+                //進めるかを確認する
+                var isPass = Main.chkMapChip(this.targetCol + 1, this.targetRow, this.col, this.row);
+                if (isPass == true) {
+                    this.targetCol = this.targetCol + 1;
+                    isSetTraget = true;
+                    this.setDirection("e");
+                }
+            }
+            if (d == 2) {
+                var isPass = Main.chkMapChip(this.targetCol - 1, this.targetRow, this.col, this.row);
+                if (isPass == true) {
+                    this.targetCol = this.targetCol - 1;
+                    isSetTraget = true;
+                    this.setDirection("w");
+                }
+            }
+            if (d == 3) {
+                var isPass = Main.chkMapChip(this.targetCol, this.targetRow + 1, this.col, this.row);
+                if (isPass == true) {
+                    this.targetRow = this.targetRow + 1;
+                    isSetTraget = true;
+                    this.setDirection("n");
+                }
+            }
+            if (d == 4) {
+                var isPass = Main.chkMapChip(this.targetCol, this.targetRow - 1, this.col, this.row);
+                if (isPass == true) {
+                    this.targetRow = this.targetRow - 1;
+                    isSetTraget = true;
+                    this.setDirection("s");
+                }
+            }
+            if (isSetTraget == true) {
+                this.setIsTargetAvailable(true);
+                isSetTraget = false;
+            }
+        }
+    }
 }
 
 export function createNPC(scene: Scene, type: number) {
@@ -92,7 +226,7 @@ export function createNPC(scene: Scene, type: number) {
         "", "" + "./glb/", fileName,
         scene, function (newMeshes) {
             var mesh = newMeshes[0];
-            Main.partsArray2.push(mesh);
+            Main.meshArray.push(mesh);
             mesh.scaling = new Vector3(scale, scale, scale);
             var t = Main.getRand(1, Main.FirstTargetNums.length);
             var targetNum = Main.FirstTargetNums[t];

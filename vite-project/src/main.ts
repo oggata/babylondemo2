@@ -42,8 +42,8 @@ export var ENEMY_COUNT = 5;
 export var ITEM_COUNT = 5;
 export var MAP_ARRAY: any[] = [];
 
-export var partsArray: { dispose: () => void; }[] | Mesh[] = [];
-export var partsArray2: { dispose: () => void; }[] | AbstractMesh[] = [];
+export var boxArray: { dispose: () => void; }[] | Mesh[] = [];
+export var meshArray: { dispose: () => void; }[] | AbstractMesh[] = [];
 export var chipArray: {
   id: number; type: number; col: number; row: number; h: number;
 }[] = [];
@@ -113,99 +113,25 @@ const main = async () => {
   var stepId = 0;
   setInterval(function () {
     for (var j = 0; j < persons.length; j++) {
-      var speed = 1;
-      if (persons[j].mesh != undefined) {
-        if (orgFloor(persons[j].mesh!.position.x, 1) < persons[j].targetCol) {
-          persons[j].setMeshPosition(persons[j].mesh!.position.x + speed, persons[j].mesh!.position.z, persons[j].z);
-        }
-        if (orgFloor(persons[j].mesh!.position.x, 1) > persons[j].targetCol) {
-          persons[j].setMeshPosition(persons[j].mesh!.position.x - speed, persons[j].mesh!.position.z, persons[j].z);
-        }
-        if (orgFloor(persons[j].mesh!.position.z, 1) < persons[j].targetRow) {
-          persons[j].setMeshPosition(persons[j].mesh!.position.x, persons[j].mesh!.position.z + speed, persons[j].z);
-        }
-        if (orgFloor(persons[j].mesh!.position.z, 1) > persons[j].targetRow) {
-          persons[j].setMeshPosition(persons[j].mesh!.position.x, persons[j].mesh!.position.z - speed, persons[j].z);
-        }
-        if (orgFloor(persons[j].mesh!.position.x, 1) == persons[j].targetCol
-          && orgFloor(persons[j].mesh!.position.z, 1) == persons[j].targetRow
-          && persons[j].getIsTargetAvailable() == true && stepId % persons[j].tickId == 0) {
-          persons[j].setIsTargetAvailable(false);
-          persons[j].col = persons[j].targetCol;
-          persons[j].row = persons[j].targetRow;
-        }
-      }
-      if (persons[j].getIsTargetAvailable() == false && chipArray.length > 0) {
-        var d = getRand(1, 4);
-        //マップデータと自分の位置情報を渡した上で、どの方向に進むべきかを考える
-        var isSetTraget = false;
-        if (d == 1) {
-          //進めるかを確認する
-          var isPass = chkMapChip(persons[j].targetCol + 1, persons[j].targetRow, persons[j].col, persons[j].row);
-          if (isPass == true) {
-            persons[j].targetCol = persons[j].targetCol + 1;
-            isSetTraget = true;
-            persons[j].setDirection("e");
-          }
-        }
-        if (d == 2) {
-          var isPass = chkMapChip(persons[j].targetCol - 1, persons[j].targetRow, persons[j].col, persons[j].row);
-          if (isPass == true) {
-            persons[j].targetCol = persons[j].targetCol - 1;
-            isSetTraget = true;
-            persons[j].setDirection("w");
-          }
-        }
-        if (d == 3) {
-          var isPass = chkMapChip(persons[j].targetCol, persons[j].targetRow + 1, persons[j].col, persons[j].row);
-          if (isPass == true) {
-            persons[j].targetRow = persons[j].targetRow + 1;
-            isSetTraget = true;
-            persons[j].setDirection("n");
-          }
-        }
-        if (d == 4) {
-          var isPass = chkMapChip(persons[j].targetCol, persons[j].targetRow - 1, persons[j].col, persons[j].row);
-          if (isPass == true) {
-            persons[j].targetRow = persons[j].targetRow - 1;
-            isSetTraget = true;
-            persons[j].setDirection("s");
-          }
-        }
-        if (isSetTraget == true) {
-          persons[j].setIsTargetAvailable(true);
-          isSetTraget = false;
-        }
-      }
-      //console.log("step:" + stepId + "/" + persons[j].getIsTargetAvailable() + "/x:" + persons[j].mesh.position.x + "/col:" + persons[j].col + "/tcol:" + persons[j].targetCol + "/y:" + persons[j].mesh.position.y + "/row:" + persons[j].row + "/trow:" + persons[j].targetRow);
-    }
-
-    for (var i = 0; i < persons.length; i++) {
-      for (var j = 0; j < persons.length; j++) {
-        if (persons[i].type == 1 && persons[j].type == 2) {
-          if (persons[i].col == persons[j].col && persons[i].row == persons[j].row) {
-            persons[j].mesh?.dispose();
-            persons.splice(j, 1);
-            //console.log("eat");
-            SCORE + 10;
-          }
-        }
+      persons[j].thinkAndAct();
+      if (persons[j].hp < 0) {
+        persons[j].mesh?.dispose();
+        persons.splice(j, 1);
+        //console.log("eat");
+        SCORE + 10;
       }
     }
 
-    for (var i = 0; i < persons.length; i++) {
-      for (var j = 0; j < Item.items.length; j++) {
-        if (persons[i].col == Item.items[j].col && persons[i].row == Item.items[j].row) {
-          Item.items[j].mesh?.dispose();
-          Item.items.splice(j, 1);
-          //console.log("tree");
-          SCORE + 1;
-        }
+    for (var j = 0; j < Item.items.length; j++) {
+      if (Item.items[j].hp < 0) {
+        Item.items[j].mesh?.dispose();
+        Item.items.splice(j, 1);
+        SCORE + 1;
       }
     }
     stepId++;
     //scoreBlock.text = SCORE + "pt";
-  }, 30);
+  }, 300);
 
   // Run render loop
   babylonEngine.runRenderLoop(() => {
@@ -225,14 +151,14 @@ export function orgFloor(value: number, base: number) {
 
 var mapid = 1;
 function resetMap(scene: Scene) {
-  for (var i = 0; i < partsArray.length; i++) {
-    partsArray[i].dispose();
+  for (var i = 0; i < boxArray.length; i++) {
+    boxArray[i].dispose();
   }
-  for (var i = 0; i < partsArray2.length; i++) {
-    partsArray2[i].dispose();
+  for (var i = 0; i < meshArray.length; i++) {
+    meshArray[i].dispose();
   }
-  partsArray = [];
-  partsArray2 = [];
+  boxArray = [];
+  meshArray = [];
   persons = [];
   Item.resetItem();
   chipArray = [];
@@ -253,7 +179,7 @@ export function getChip(col: number, row: number) {
   return null;
 }
 
-function chkMapChip(col: number, row: number, col2: number, row2: number) {
+export function chkMapChip(col: number, row: number, col2: number, row2: number) {
   //範囲外ではないか
   if (col < 0 || MAP_SIZE < col || row < 0 || MAP_SIZE < row) {
     return false;

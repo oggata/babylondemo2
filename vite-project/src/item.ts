@@ -14,6 +14,7 @@ export class Item {
     targetRow: number;
     isTargetAvailable: boolean;
     mesh: AbstractMesh | undefined;
+    hp: number;
     constructor(id: number, col: number, row: number, type: number) {
         this.id = id;
         this.col = col;
@@ -22,6 +23,7 @@ export class Item {
         this.targetRow = row;
         this.isTargetAvailable = false;
         this.type = type;
+        this.hp = 5;
     }
     setMesh(mesh: AbstractMesh) {
         this.mesh = mesh
@@ -79,7 +81,7 @@ export function createItem(scene: Scene, type: number, col?: number, row?: numbe
             mesh.scaling = new Vector3(scale, scale, scale * -1);
             //mesh.rotation = Vector3.Zero();
             if (mesh != undefined) {
-                Main.partsArray2.push(mesh);
+                Main.meshArray.push(mesh);
             }
             var targetNum = 1;
             var _col: number;
