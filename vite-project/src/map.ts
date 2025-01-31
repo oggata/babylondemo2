@@ -1,9 +1,9 @@
-//import { _OcclusionDataStorage, AbstractMesh, SceneLoader, Axis, Space } from "@babylonjs/core";
 import { _OcclusionDataStorage } from "@babylonjs/core";
 import { Scene } from "@babylonjs/core/scene.js";
 import * as Main from './main.ts'
 import * as Item from './item.ts';
 import * as MMap from './mmap.ts';
+import * as Npc from './npc.ts'
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.js";
 import { Color3 } from "@babylonjs/core/Maths/math.color.js";
 import { MeshBuilder } from "@babylonjs/core/";
@@ -12,13 +12,21 @@ export function getMapData(id: number): any[] {
     if (id == 1) {
         return MMap.MAP_ARRAY2;
     } else if (id == 2) {
-        return MMap.MAP_ARRAY3;
+        return MMap.MAP_ARRAY2;
     } else if (id == 3) {
-        return MMap.MAP_ARRAY4;
+        return MMap.MAP_ARRAY3;
     } else if (id == 4) {
-        return MMap.MAP_ARRAY5;
+        return MMap.MAP_ARRAY4;
     } else if (id == 5) {
+        return MMap.MAP_ARRAY5;
+    } else if (id == 6) {
         return MMap.MAP_ARRAY6;
+    } else if (id == 7) {
+        return MMap.MAP_ARRAY7;
+    } else if (id == 8) {
+        return MMap.MAP_ARRAY8;
+    } else if (id == 9) {
+        return MMap.MAP_ARRAY9;
     } else {
         return MMap.MAP_ARRAY5;
     }
@@ -52,7 +60,6 @@ export function generateMap(scene: Scene) {
     const Material8 = new StandardMaterial("material", scene);
     Material8.diffuseColor = Color3.FromHexString('#3C552D');
 
-    //boxMaterial.diffuseColor = Color3.Random();
     for (var row = 1; row <= Main.MAP_SIZE; row++) {
         for (var col = 1; col <= Main.MAP_SIZE; col++) {
             var num = Main.MAP_ARRAY[bid];
@@ -101,12 +108,16 @@ export function generateMap(scene: Scene) {
     Main.setFirstTargetNums();
 
     for (var k = 0; k < Main.NPC_COUNT; k++) {
-        Main.createNPC(scene, 1);
+        Npc.createNPC(scene, 1);
     }
     for (var k = 0; k < Main.ENEMY_COUNT; k++) {
-        Main.createNPC(scene, 2);
+        Npc.createNPC(scene, 5);
+        //Npc.createNPC(scene, 3);
+        //Npc.createNPC(scene, 4);
     }
     for (var k = 0; k < Main.ITEM_COUNT; k++) {
         Item.createItem(scene, 1);
+        Item.createItem(scene, 2);
+        Item.createItem(scene, 3);
     }
 }

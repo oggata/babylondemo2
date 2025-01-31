@@ -1,6 +1,7 @@
 import { _OcclusionDataStorage, AbstractMesh, SceneLoader } from "@babylonjs/core";
 import { Scene } from "@babylonjs/core/scene.js";
 import * as Main from './main.ts'
+import { Vector3 } from "@babylonjs/core/Maths/math.vector.js";
 
 export var items: Item[] = [];
 
@@ -34,11 +35,11 @@ export class Item {
     getIsTargetAvailable() {
         return this.isTargetAvailable;
     }
-    setMeshPosition(col: number, row: number) {
+    setMeshPosition(col: number, row: number, z: number) {
         this.mesh!.position.x = col;
         this.mesh!.position.z = row;
         var c = Main.getChip(col, row);
-        this.mesh!.position.y = c!.h + 1.2;
+        this.mesh!.position.y = c!.h + z;
     }
 }
 
@@ -47,11 +48,27 @@ export function resetItem() {
     items = [];
 }
 
-export function createItem(scene: Scene, type: number) {
+export function createItem(scene: Scene, type: number, col?: number, row?: number) {
     //var boxSize = { width: 0.8, height: 1.5, depth: 0.8 };
     var fileName = "Tree.glb";
+    var scale = 1;
+    var z = 1.2;
     if (type == 2) {
-        fileName = "Cottage.glb";
+        fileName = "Tent.glb";
+        scale = 0.5;
+        z = 0.2;
+    } else if (type == 3) {
+        fileName = "Campfire.glb";
+        scale = 0.3;
+        z = 0.2;
+    } else if (type == 4) {
+        fileName = "Campfire.glb";
+        scale = 0.3;
+        z = 0.2;
+    } else if (type == 5) {
+        fileName = "Campfire.glb";
+        scale = 0.3;
+        z = 0.2;
     }
 
     SceneLoader.ImportMesh(
@@ -59,16 +76,26 @@ export function createItem(scene: Scene, type: number) {
         scene, function (newMeshes) {
             var mesh = newMeshes[0];
             //var num = type;
-            //mesh.scaling = new Vector3(0.3, 0.3, -0.3);
+            mesh.scaling = new Vector3(scale, scale, scale * -1);
             //mesh.rotation = Vector3.Zero();
             if (mesh != undefined) {
                 Main.partsArray2.push(mesh);
             }
-            const targetNum = Main.getRand(1, Main.MAP_SIZE * Main.MAP_SIZE);
-            const chip = Main.chipArray[targetNum];
-            var i: Item = new Item(targetNum, chip.col, chip.row, 1);
+            var targetNum = 1;
+            var _col: number;
+            var _row: number;
+            if (col == null || row == null) {
+                targetNum = Main.getRand(1, Main.MAP_SIZE * Main.MAP_SIZE);
+                const chip = Main.chipArray[targetNum];
+                _col = chip.col;
+                _row = chip.row;
+            } else {
+                _col = col;
+                _row = row;
+            }
+            var i: Item = new Item(targetNum, _col, _row, 1);
             i.setMesh(mesh);
-            i.setMeshPosition(chip.col, chip.row);
+            i.setMeshPosition(_col, _row, z);
             items.push(i);
         }
     );
