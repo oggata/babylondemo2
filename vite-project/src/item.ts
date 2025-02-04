@@ -155,8 +155,3 @@ export function createItem(scene: Scene, type: number, col?: number, row?: numbe
       items.push(i);
     */
 }
-
-
-export function getItems(col: number, row: number) {
-
-}

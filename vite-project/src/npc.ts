@@ -5,8 +5,6 @@ import * as Main from './main.ts'
 import { Vector3 } from "@babylonjs/core/Maths/math.vector.js";
 //import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.js";
 import * as Item from './item.ts';
-import { ScrollViewer } from "@babylonjs/gui";
-
 import * as Score from './score.ts';
 
 export class Person {
@@ -220,7 +218,7 @@ export class Person {
             //d = 2;
             if (d == 1) {
                 //進めるかを確認する
-                var isPass = Main.chkMapChip(this.hashid,this.targetCol + 1, this.targetRow, this.col, this.row);
+                var isPass = Main.chkMapChip(this.hashid, this.targetCol + 1, this.targetRow, this.col, this.row);
                 if (isPass == true) {
                     this.targetCol = this.targetCol + 1;
                     isSetTraget = true;

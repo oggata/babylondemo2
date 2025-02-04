@@ -8,7 +8,8 @@ import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight.js";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 //import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder.js";
 //import { MeshLoader } from "@babylonjs/core/Meshes/MeshLoader.js";
-import { _OcclusionDataStorage, AbstractMesh, SceneLoader, Axis, Space } from "@babylonjs/core";
+//import { _OcclusionDataStorage, AbstractMesh, SceneLoader, Axis, Space } from "@babylonjs/core";
+import { _OcclusionDataStorage, AbstractMesh } from "@babylonjs/core";
 
 import { Scene } from "@babylonjs/core/scene.js";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.js";
