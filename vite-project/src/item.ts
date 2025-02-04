@@ -59,8 +59,6 @@ export class Item {
     remove() {
         if (this.type == 1) {
             Score.updateTreeAmount(100);
-        } else if (this.type == 2) {
-
         }
     }
 }

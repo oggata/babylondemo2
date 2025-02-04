@@ -7,10 +7,18 @@ export function setPopulation(score: number) {
     POPULATION = score;
 }
 
+export function setAnimalCount(score: number) {
+    ANIMAL_AMOUNT = score;
+}
+
 export function updateTreeAmount(score: number) {
     TREE_AMOUNT += score;
 }
 
+export function updateFoodAmount(score: number) {
+    FOOD_AMOUNT += score;
+}
+
 export function getScoreText() {
-    return "HUMAN:" + POPULATION + "/Tree:" + TREE_AMOUNT + "/Food:" + FOOD_AMOUNT;
+    return "HUMAN:" + POPULATION + "/Animal:" + ANIMAL_AMOUNT + "/Tree:" + TREE_AMOUNT + "/Food:" + FOOD_AMOUNT;
 }

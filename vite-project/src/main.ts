@@ -118,7 +118,7 @@ const main = async () => {
       if (persons[j].type == 1) {
         humanCount++;
       }
-      if (persons[j].type == 2) {
+      if (persons[j].type != 1) {
         enemyCount++;
       }
       if (stepId == persons[j].tickId) {
@@ -126,11 +126,13 @@ const main = async () => {
         persons[j].thinkAndAct(scene);
       }
       if (persons[j].hp < 0) {
+        persons[j].remove();
         persons[j].mesh?.dispose();
         persons.splice(j, 1);
       }
     }
     Score.setPopulation(humanCount);
+    Score.setAnimalCount(enemyCount);
     for (var j = 0; j < Item.items.length; j++) {
       if (Item.items[j].hp < 0) {
         Item.items[j].remove();
@@ -201,8 +203,12 @@ export function chkMapChip(hashid: number, col: number, row: number, col2: numbe
       return false;
     }
   }
+  //他のNPCとかぶっていないか？
   for (var j = 0; j < persons.length; j++) {
     if (col == persons[j].col && row == persons[j].row && hashid != persons[j].hashid) {
+      return false;
+    }
+    if (col == persons[j].targetCol && row == persons[j].targetRow && hashid != persons[j].hashid) {
       return false;
     }
   }

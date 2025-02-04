@@ -37,21 +37,24 @@ export class Person {
         this.isTargetAvailable = false;
         this.type = type;
         this.direction = "n";
-        this.z = 0.2;
-        this.attack = 1;
-        this.defence = 1;
         if (type == 1) {
             this.tickId = Main.getRand(1, 30);
             this.isCreateObject = true;
             this.isPickObject = true;
             this.isAttack = true;
             this.hp = this.maxHp = 100;
+            this.z = 0;
+            this.attack = 1;
+            this.defence = 1;
         } else {
             this.tickId = Main.getRand(10, 30);
             this.isCreateObject = false;
             this.isPickObject = false;
             this.hp = this.maxHp = 10;
             this.isAttack = false;
+            this.z = 0.2;
+            this.attack = 1;
+            this.defence = 1;
         }
     }
     setMesh(mesh: AbstractMesh) {
@@ -147,7 +150,7 @@ export class Person {
                 isAction = true;
             }
         }
-        if (this.isCreateObject == true && Score.TREE_AMOUNT > 100) {
+        if (this.isCreateObject == true && Score.TREE_AMOUNT >= 100) {
             this.build(scene, this.col, this.row);
             isAction = true;
         }
@@ -253,6 +256,12 @@ export class Person {
                 this.setIsTargetAvailable(true);
                 isSetTraget = false;
             }
+        }
+    }
+
+    remove() {
+        if (this.type != 1) {
+            Score.updateFoodAmount(100);
         }
     }
 }
