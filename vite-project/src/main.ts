@@ -35,11 +35,12 @@ import * as Map from './map.ts';
 import * as Agent from './agent.ts';
 import * as Item from './item.ts';
 import * as NPC from './npc.ts';
+import * as Score from './score.ts';
 
 export var MAP_SIZE = 30;
 export var NPC_COUNT = 5;
 export var ENEMY_COUNT = 5;
-export var ITEM_COUNT = 5;
+export var ITEM_COUNT = 10;
 export var MAP_ARRAY: any[] = [];
 
 export var boxArray: { dispose: () => void; }[] | Mesh[] = [];
@@ -49,8 +50,6 @@ export var chipArray: {
 }[] = [];
 export var persons: NPC.Person[] = [];
 export var FirstTargetNums: any[] = [];
-
-var SCORE = 0;
 
 const main = async () => {
 
@@ -72,7 +71,7 @@ const main = async () => {
   // GUI
   var advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
   var scoreBlock = new GUI.TextBlock();
-  scoreBlock.text = SCORE + "pt";
+  scoreBlock.text = "";
   scoreBlock.fontSize = 12;
   scoreBlock.top = 220;
   //scoreBlock.left = -150;
@@ -112,33 +111,44 @@ const main = async () => {
 
   var stepId = 0;
   setInterval(function () {
+    var humanCount = 0;
+    var enemyCount = 0;
     for (var j = 0; j < persons.length; j++) {
-      persons[j].thinkAndAct();
+      if (persons[j].type == 1) {
+        humanCount++;
+      }
+      if (persons[j].type == 2) {
+        enemyCount++;
+      }
+      if (stepId == persons[j].tickId) {
+        //特定のtickの時だけ呼び出す
+        persons[j].thinkAndAct(scene);
+      }
       if (persons[j].hp < 0) {
         persons[j].mesh?.dispose();
         persons.splice(j, 1);
-        //console.log("eat");
-        SCORE + 10;
       }
     }
-
+    Score.setPopulation(humanCount);
     for (var j = 0; j < Item.items.length; j++) {
       if (Item.items[j].hp < 0) {
+        Item.items[j].remove();
         Item.items[j].mesh?.dispose();
         Item.items.splice(j, 1);
-        SCORE + 1;
       }
     }
     stepId++;
-    //scoreBlock.text = SCORE + "pt";
-  }, 300);
+    if (stepId > 30) {
+      stepId = 0;
+    }
+    var text = Score.getScoreText();
+    scoreBlock.text = text;
+  }, 30);
 
   // Run render loop
   babylonEngine.runRenderLoop(() => {
     scene.render();
   });
-
-
 }
 
 export function getRand(from: number, to: number) {
@@ -179,10 +189,21 @@ export function getChip(col: number, row: number) {
   return null;
 }
 
-export function chkMapChip(col: number, row: number, col2: number, row2: number) {
+export function chkMapChip(hashid: number, col: number, row: number, col2: number, row2: number) {
   //範囲外ではないか
   if (col < 0 || MAP_SIZE < col || row < 0 || MAP_SIZE < row) {
     return false;
+  }
+  //他のオブジェクトとかぶっていないか？
+  for (var j = 0; j < Item.items.length; j++) {
+    if (col == Item.items[j].col && row == Item.items[j].row) {
+      return false;
+    }
+  }
+  for (var j = 0; j < persons.length; j++) {
+    if (col == persons[j].col && row == persons[j].row && hashid != persons[j].hashid) {
+      return false;
+    }
   }
   //通行できるか
   //今の高さより高いかを調べる

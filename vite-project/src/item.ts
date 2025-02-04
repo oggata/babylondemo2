@@ -2,6 +2,7 @@ import { _OcclusionDataStorage, AbstractMesh, SceneLoader } from "@babylonjs/cor
 import { Scene } from "@babylonjs/core/scene.js";
 import * as Main from './main.ts'
 import { Vector3 } from "@babylonjs/core/Maths/math.vector.js";
+import * as Score from './score.ts';
 
 export var items: Item[] = [];
 
@@ -15,6 +16,10 @@ export class Item {
     isTargetAvailable: boolean;
     mesh: AbstractMesh | undefined;
     hp: number;
+    maxHp: number;
+    isPick: boolean;
+    isAttackByNPC: boolean = false;
+
     constructor(id: number, col: number, row: number, type: number) {
         this.id = id;
         this.col = col;
@@ -23,7 +28,15 @@ export class Item {
         this.targetRow = row;
         this.isTargetAvailable = false;
         this.type = type;
-        this.hp = 5;
+        this.hp = this.maxHp = 100;
+        //tree
+        if (type == 1) {
+            this.isPick = true;
+        } else if (type == 2) {
+            this.isPick = false;
+        } else {
+            this.isPick = false;
+        }
     }
     setMesh(mesh: AbstractMesh) {
         this.mesh = mesh
@@ -43,6 +56,13 @@ export class Item {
         var c = Main.getChip(col, row);
         this.mesh!.position.y = c!.h + z;
     }
+    remove() {
+        if (this.type == 1) {
+            Score.updateTreeAmount(100);
+        } else if (this.type == 2) {
+
+        }
+    }
 }
 
 
@@ -55,7 +75,11 @@ export function createItem(scene: Scene, type: number, col?: number, row?: numbe
     var fileName = "Tree.glb";
     var scale = 1;
     var z = 1.2;
-    if (type == 2) {
+    if (type == 1) {
+        fileName = "Tree.glb";
+        scale = 1;
+        z = 1.2;
+    } else if (type == 2) {
         fileName = "Tent.glb";
         scale = 0.5;
         z = 0.2;
@@ -95,7 +119,7 @@ export function createItem(scene: Scene, type: number, col?: number, row?: numbe
                 _col = col;
                 _row = row;
             }
-            var i: Item = new Item(targetNum, _col, _row, 1);
+            var i: Item = new Item(targetNum, _col, _row, type);
             i.setMesh(mesh);
             i.setMeshPosition(_col, _row, z);
             items.push(i);
@@ -130,4 +154,9 @@ export function createItem(scene: Scene, type: number, col?: number, row?: numbe
       mesh.position.z = chip.row;
       items.push(i);
     */
+}
+
+
+export function getItems(col: number, row: number) {
+
 }

@@ -108,16 +108,14 @@ export function generateMap(scene: Scene) {
     Main.setFirstTargetNums();
 
     for (var k = 0; k < Main.NPC_COUNT; k++) {
-        Npc.createNPC(scene, 1);
+        Npc.createNPC(scene, 1); //human
     }
     for (var k = 0; k < Main.ENEMY_COUNT; k++) {
-        Npc.createNPC(scene, 5);
-        //Npc.createNPC(scene, 3);
-        //Npc.createNPC(scene, 4);
+        Npc.createNPC(scene, 5); //sai
+        Npc.createNPC(scene, 2); //yagi
     }
     for (var k = 0; k < Main.ITEM_COUNT; k++) {
-        Item.createItem(scene, 1);
-        Item.createItem(scene, 2);
-        Item.createItem(scene, 3);
+        Item.createItem(scene, 1); //tree
     }
 }
+
