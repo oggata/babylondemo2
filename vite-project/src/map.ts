@@ -1,4 +1,4 @@
-import { _OcclusionDataStorage } from "@babylonjs/core";
+import { _OcclusionDataStorage, AbstractMesh } from "@babylonjs/core";
 import { Scene } from "@babylonjs/core/scene.js";
 import * as Main from './main.ts'
 import * as Item from './item.ts';
@@ -7,6 +7,8 @@ import * as Npc from './npc.ts'
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.js";
 import { Color3 } from "@babylonjs/core/Maths/math.color.js";
 import { MeshBuilder } from "@babylonjs/core/";
+
+import * as Score from './score.ts';
 
 export function getMapData(id: number): any[] {
     if (id == 1) {
@@ -33,8 +35,45 @@ export function getMapData(id: number): any[] {
 }
 
 export function generateMap(scene: Scene) {
-    var bid = 1;
-    //1: 平地 2:道路 3:川 4:木
+    var bid = 0;
+    for (var row = 1; row <= Main.MAP_SIZE; row++) {
+        for (var col = 1; col <= Main.MAP_SIZE; col++) {
+            var type = Main.MAP_ARRAY[bid];
+            addBox(type, bid, col, row, scene);
+            bid++;
+        }
+    }
+
+    Main.setFirstTargetNums();
+
+    for (var k = 0; k < Main.NPC_COUNT; k++) {
+        Npc.createNPC(scene, 1); //human
+    }
+    for (var k = 0; k < Main.ENEMY_COUNT; k++) {
+        Npc.createNPC(scene, 5); //sai
+        Npc.createNPC(scene, 2); //yagi
+    }
+    for (var k = 0; k < Main.ITEM_COUNT; k++) {
+        Item.createItem(scene, 1); //tree
+    }
+}
+
+export function addBox(type: number, bid: number, col: number, row: number, scene: Scene) {
+    var objectHight = type / 3;
+    var box = MeshBuilder.CreateBox("box", { width: 1, height: objectHight, depth: 1 });
+    box.position.x = col;
+    box.position.z = row;
+    box.position.y = objectHight / 2;
+    const b = {
+        bid: bid,
+        type: type,
+        h: objectHight,
+        col: col,
+        row: row,
+        mesh: box
+    };
+    Main.chipArray.push(b);
+
     const Material1 = new StandardMaterial("material", scene);
     Material1.diffuseColor = Color3.FromHexString('#4DA1A9');
 
@@ -60,62 +99,42 @@ export function generateMap(scene: Scene) {
     const Material8 = new StandardMaterial("material", scene);
     Material8.diffuseColor = Color3.FromHexString('#3C552D');
 
-    for (var row = 1; row <= Main.MAP_SIZE; row++) {
-        for (var col = 1; col <= Main.MAP_SIZE; col++) {
-            var num = Main.MAP_ARRAY[bid];
-            var objectHight = num / 3;
-            var box = MeshBuilder.CreateBox("box", { width: 1, height: objectHight, depth: 1 });
-            Main.boxArray.push(box);
-            box.position.x = col;
-            box.position.z = row;
-            box.position.y = objectHight / 2;
-            const b = {
-                id: 0,
-                type: 0,
-                h: 0,
-                col: 0,
-                row: 0
-            };
-            b.id = bid;
-            b.type = num;
-            b.col = col;
-            b.row = row;
-            b.h = objectHight;
-            Main.chipArray.push(b);
-            if (b.type == 1) {
-                box.material = Material1;
-            } else if (b.type == 2) {
-                box.material = Material2;
-            } else if (b.type == 3) {
-                box.material = Material3;
-            } else if (b.type == 4) {
-                box.material = Material4;
-            } else if (b.type == 5) {
-                box.material = Material5;
-            } else if (b.type == 6) {
-                box.material = Material6;
-            } else if (b.type == 7) {
-                box.material = Material7;
-            } else if (b.type == 8) {
-                box.material = Material8;
-            } else {
-                box.material = Material3;
-            }
-            bid++;
-        }
-    }
-
-    Main.setFirstTargetNums();
-
-    for (var k = 0; k < Main.NPC_COUNT; k++) {
-        Npc.createNPC(scene, 1); //human
-    }
-    for (var k = 0; k < Main.ENEMY_COUNT; k++) {
-        Npc.createNPC(scene, 5); //sai
-        Npc.createNPC(scene, 2); //yagi
-    }
-    for (var k = 0; k < Main.ITEM_COUNT; k++) {
-        Item.createItem(scene, 1); //tree
+    if (b.type == 1) {
+        box.material = Material1;
+    } else if (b.type == 2) {
+        box.material = Material2;
+    } else if (b.type == 3) {
+        box.material = Material3;
+    } else if (b.type == 4) {
+        box.material = Material4;
+    } else if (b.type == 5) {
+        box.material = Material5;
+    } else if (b.type == 6) {
+        box.material = Material6;
+    } else if (b.type == 7) {
+        box.material = Material7;
+    } else if (b.type == 8) {
+        box.material = Material8;
+    } else {
+        box.material = Material3;
     }
 }
 
+export function growMap(scene: Scene) {
+
+    if (Score.FOOD_AMOUNT >= 100) {
+        Score.updateFoodAmount(-100);
+        Npc.createNPC(scene, 1);
+    }
+
+    /*
+        var r = Main.getRand(1, Main.chipArray.length);
+        var a = Main.chipArray[r];
+        var c = a.col;
+        var r = a.row;
+        a.mesh.dispose();
+        Main.chipArray.splice(r, 1);
+        var h = Main.getRand(1, 8)
+        addBox(h, 1, c, r, scene)
+    */
+}

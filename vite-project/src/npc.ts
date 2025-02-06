@@ -4,6 +4,7 @@ import * as Main from './main.ts'
 //import { Color3 } from "@babylonjs/core/Maths/math.color.js";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector.js";
 //import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.js";
+//import * as GUI from "@babylonjs/gui";
 import * as Item from './item.ts';
 import * as Score from './score.ts';
 
@@ -27,6 +28,7 @@ export class Person {
     isAttack: boolean;
     isCreateObject: boolean;
     isPickObject: boolean;
+    speed: number;
     constructor(id: number, col: number, row: number, type: number) {
         this.id = id;
         this.hashid = Main.getRand(1, 9999);
@@ -37,8 +39,9 @@ export class Person {
         this.isTargetAvailable = false;
         this.type = type;
         this.direction = "n";
+        this.tickId = Main.getRand(1, 30);
+        this.speed = 0.1;
         if (type == 1) {
-            this.tickId = Main.getRand(1, 30);
             this.isCreateObject = true;
             this.isPickObject = true;
             this.isAttack = true;
@@ -46,15 +49,16 @@ export class Person {
             this.z = 0;
             this.attack = 1;
             this.defence = 1;
+            this.speed = 0.1;
         } else {
-            this.tickId = Main.getRand(10, 30);
             this.isCreateObject = false;
             this.isPickObject = false;
-            this.hp = this.maxHp = 10;
+            this.hp = this.maxHp = 1;
             this.isAttack = false;
             this.z = 0.2;
             this.attack = 1;
             this.defence = 1;
+            this.speed = 0.1;
         }
     }
     setMesh(mesh: AbstractMesh) {
@@ -71,10 +75,18 @@ export class Person {
         return this.isTargetAvailable;
     }
     setMeshPosition(col: number, row: number, z: number) {
-        this.mesh!.position.x = col;
-        this.mesh!.position.z = row;
-        var c = Main.getChip(col, row);
-        this.mesh!.position.y = c!.h + z;
+        var c = parseFloat(col.toFixed(1));
+        var r = parseFloat(row.toFixed(1));
+        var c2 = parseFloat(col.toFixed(0));
+        var r2 = parseFloat(row.toFixed(1));
+        this.mesh!.position.x = c;
+        this.mesh!.position.z = r;
+        var chip = Main.getChip(c2, r2);
+        if (chip != null) {
+            this.z = z;
+            this.mesh!.position.y = chip!.h + z;
+        }
+
     }
     setDirection(direction: string) {
         if (this.direction == "n") {
@@ -125,11 +137,9 @@ export class Person {
     }
 
     setMethod(o: Person | Item.Item | undefined): boolean {
-
         if (o == undefined) {
             return false;
         }
-
         if (o.constructor === Item.Item) {
             var a = this.getItem(o);
             return a;
@@ -147,14 +157,17 @@ export class Person {
         var isAction = false;
         for (var i = 0; i < 4; i++) {
             if (this.setMethod(eye[i]) == true) {
+                //console.log("aa");
                 isAction = true;
             }
         }
         if (this.isCreateObject == true && Score.TREE_AMOUNT >= 100) {
             this.build(scene, this.col, this.row);
+            //console.log("bb");
             isAction = true;
         }
         if (isAction == false) {
+            //console.log("cc");
             this.walk();
         }
     }
@@ -183,7 +196,7 @@ export class Person {
     }
 
     build(scene: Scene, col: number, row: number) {
-        if (Score.TREE_AMOUNT > 100) {
+        if (Score.TREE_AMOUNT >= 100) {
             Score.updateTreeAmount(-100);
             //create tent
             Item.createItem(scene, 2, col, row);
@@ -191,23 +204,22 @@ export class Person {
     }
 
     walk() {
-        var speed = 1;
+        //console.log(this.mesh!.position.x + "-" + this.mesh!.position.z + "|" + this.targetCol + "-" + this.targetRow);
         if (this.mesh != undefined) {
             if (Main.orgFloor(this.mesh!.position.x, 1) < this.targetCol) {
-                this.setMeshPosition(this.mesh!.position.x + speed, this.mesh!.position.z, this.z);
+                this.setMeshPosition(this.mesh!.position.x + this.speed, this.mesh!.position.z, this.z);
             }
             if (Main.orgFloor(this.mesh!.position.x, 1) > this.targetCol) {
-                this.setMeshPosition(this.mesh!.position.x - speed, this.mesh!.position.z, this.z);
+                this.setMeshPosition(this.mesh!.position.x - this.speed, this.mesh!.position.z, this.z);
             }
             if (Main.orgFloor(this.mesh!.position.z, 1) < this.targetRow) {
-                this.setMeshPosition(this.mesh!.position.x, this.mesh!.position.z + speed, this.z);
+                this.setMeshPosition(this.mesh!.position.x, this.mesh!.position.z + this.speed, this.z);
             }
             if (Main.orgFloor(this.mesh!.position.z, 1) > this.targetRow) {
-                this.setMeshPosition(this.mesh!.position.x, this.mesh!.position.z - speed, this.z);
+                this.setMeshPosition(this.mesh!.position.x, this.mesh!.position.z - this.speed, this.z);
             }
             if (Main.orgFloor(this.mesh!.position.x, 1) == this.targetCol
                 && Main.orgFloor(this.mesh!.position.z, 1) == this.targetRow
-                //&& this.getIsTargetAvailable() == true && stepId % this.tickId == 0) {
                 && this.getIsTargetAvailable() == true) {
                 this.setIsTargetAvailable(false);
                 this.col = this.targetCol;
@@ -301,6 +313,28 @@ export function createNPC(scene: Scene, type: number) {
             p.setMesh(mesh);
             Main.persons.push(p);
             p.setMeshPosition(chip.col, chip.row, p.z);
+
+
+
+            /*
+                        var manager = new GUI.GUI3DManager(scene);
+                        var panel = new GUI.StackPanel3D();
+                        panel.margin = 0.02;
+                        manager.addControl(panel);
+            
+                        panel.position = new Vector3(0, 0, 0);
+                        panel.scaling = new Vector3(2, 2, 2);
+                        var button = new GUI.Button3D("orientation");
+            
+                        panel.addControl(button);
+                        var text1 = new GUI.TextBlock();
+                        text1.text = "Here we are";
+                        text1.color = "white";
+                        text1.fontSize = 77;
+                        text1.fontFamily = "Arial";
+                        button.content = text1;
+            */
+
         }
     );
 }

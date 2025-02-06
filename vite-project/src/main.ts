@@ -1,6 +1,7 @@
 import "./style.css";
 
 import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera.js";
+import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera.js";
 import { Color3 } from "@babylonjs/core/Maths/math.color.js";
 import { Engine } from "@babylonjs/core/Engines/engine.js";
 //import { EnvironmentHelper } from "@babylonjs/core/Helpers/environmentHelper.js";
@@ -41,13 +42,15 @@ import * as Score from './score.ts';
 export var MAP_SIZE = 30;
 export var NPC_COUNT = 5;
 export var ENEMY_COUNT = 5;
-export var ITEM_COUNT = 10;
+export var ITEM_COUNT = 15;
 export var MAP_ARRAY: any[] = [];
 
-export var boxArray: { dispose: () => void; }[] | Mesh[] = [];
+//export var boxArray: { dispose: () => void; }[] | Mesh[] = [];
 export var meshArray: { dispose: () => void; }[] | AbstractMesh[] = [];
 export var chipArray: {
-  id: number; type: number; col: number; row: number; h: number;
+  mesh: any;
+  bid: number;
+  type: number; col: number; row: number; h: number;
 }[] = [];
 export var persons: NPC.Person[] = [];
 export var FirstTargetNums: any[] = [];
@@ -66,6 +69,7 @@ const main = async () => {
   new HemisphericLight("light1", new Vector3(0, 0.1, 0), scene);
 
   // Add a camera for the non-VR view in browser
+  //var camera = new FreeCamera("camera", new Vector3(5, 4, 2), scene);
   const camera = new ArcRotateCamera("Camera", -(Math.PI / 4) * 3, Math.PI / 4, 40, new Vector3(5, 4, 2), scene);
   camera.attachControl(true);
 
@@ -121,18 +125,17 @@ const main = async () => {
       if (persons[j].type != 1) {
         enemyCount++;
       }
-      if (stepId == persons[j].tickId) {
-        //特定のtickの時だけ呼び出す
-        persons[j].thinkAndAct(scene);
-      }
+      //if (stepId == persons[j].tickId) {
+      //特定のtickの時だけ呼び出す
+      persons[j].thinkAndAct(scene);
+      //}
       if (persons[j].hp < 0) {
         persons[j].remove();
         persons[j].mesh?.dispose();
         persons.splice(j, 1);
       }
     }
-    Score.setPopulation(humanCount);
-    Score.setAnimalCount(enemyCount);
+
     for (var j = 0; j < Item.items.length; j++) {
       if (Item.items[j].hp < 0) {
         Item.items[j].remove();
@@ -143,10 +146,14 @@ const main = async () => {
     stepId++;
     if (stepId > 30) {
       stepId = 0;
+      Map.growMap(scene);
+      Score.setPopulation(humanCount);
+      Score.setAnimalCount(enemyCount);
+      var text = Score.getScoreText();
+      scoreBlock.text = text;
     }
-    var text = Score.getScoreText();
-    scoreBlock.text = text;
-  }, 30);
+
+  }, 30 * 3);
 
   // Run render loop
   babylonEngine.runRenderLoop(() => {
@@ -164,13 +171,15 @@ export function orgFloor(value: number, base: number) {
 
 var mapid = 1;
 function resetMap(scene: Scene) {
+  /*
   for (var i = 0; i < boxArray.length; i++) {
     boxArray[i].dispose();
   }
+    */
   for (var i = 0; i < meshArray.length; i++) {
     meshArray[i].dispose();
   }
-  boxArray = [];
+  //boxArray = [];
   meshArray = [];
   persons = [];
   Item.resetItem();
