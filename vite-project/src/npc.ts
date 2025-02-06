@@ -196,7 +196,8 @@ export class Person {
     }
 
     build(scene: Scene, col: number, row: number) {
-        if (Score.TREE_AMOUNT >= 100) {
+        var r = Main.getRand(1, 50);
+        if (Score.TREE_AMOUNT >= 100 && r == 1) {
             Score.updateTreeAmount(-100);
             //create tent
             Item.createItem(scene, 2, col, row);
