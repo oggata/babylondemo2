@@ -7,6 +7,8 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector.js";
 //import * as GUI from "@babylonjs/gui";
 import * as Item from './item.ts';
 import * as Score from './score.ts';
+import * as Agent from './agent.ts';
+
 
 export class Person {
     id: number;
@@ -49,7 +51,7 @@ export class Person {
             this.z = 0;
             this.attack = 1;
             this.defence = 1;
-            this.speed = 0.1;
+            this.speed = 1;
         } else {
             this.isCreateObject = false;
             this.isPickObject = false;
@@ -58,7 +60,7 @@ export class Person {
             this.z = 0.2;
             this.attack = 1;
             this.defence = 1;
-            this.speed = 0.1;
+            this.speed = 1;
         }
     }
     setMesh(mesh: AbstractMesh) {
@@ -86,7 +88,6 @@ export class Person {
             this.z = z;
             this.mesh!.position.y = chip!.h + z;
         }
-
     }
     setDirection(direction: string) {
         if (this.direction == "n") {
@@ -101,7 +102,6 @@ export class Person {
         if (this.direction == "e") {
             this.mesh?.rotate(Axis.Y, Math.PI / 2 * -3, Space.LOCAL);
         }
-
         this.direction = direction;
         if (this.direction == "n") {
             this.mesh?.rotate(Axis.Y, Math.PI / 2 * 2, Space.LOCAL);
@@ -120,6 +120,21 @@ export class Person {
         var n = this.getObject(this.col, this.row + 1);
         var s = this.getObject(this.col, this.row - 1);
         return [w, e, n, s];
+    }
+
+    watchDirection(d: string) {
+        if (d == "w") {
+            return this.getObject(this.col + 1, this.row);
+        }
+        if (d == "e") {
+            return this.getObject(this.col - 1, this.row);
+        }
+        if (d == "n") {
+            return this.getObject(this.col, this.row + 1);
+        }
+        if (d == "s") {
+            return this.getObject(this.col, this.row - 1);
+        }
     }
 
     getObject(col: number, row: number) {
@@ -152,6 +167,7 @@ export class Person {
     }
 
     thinkAndAct(scene: Scene) {
+        /*
         var eye = this.watch();
         //上下左右のどれかに対応する
         var isAction = false;
@@ -170,6 +186,52 @@ export class Person {
             //console.log("cc");
             this.walk();
         }
+        */
+        this.thinkRand();
+    }
+
+    async thinkRand() {
+        var eye = this.watch();
+        var d = Main.getRand(1, 4);
+        var ds: string = "n";
+        if (d == 1) {
+            ds = "n";
+        } else if (d == 2) {
+            ds = "s";
+        } else if (d == 3) {
+            ds = "w";
+        } else if (d == 4) {
+            ds = "e";
+        }
+        this.act(ds);
+    }
+
+    async thinkLLM() {
+        var eye = this.watch();
+        //進む方向を返す
+        var d = await Agent.getNPCAction("[1,1,1,1,1]");
+        this.act(d);
+    }
+
+    act(ds: string) {
+        //報告に何があるのかを検知する
+        var d2 = this.watchDirection(ds);
+        if (this.setMethod(d2) == false) {
+            this.walk();
+        }
+
+        /*
+        if (this.isCreateObject == true && Score.TREE_AMOUNT >= 100) {
+            this.build(scene, this.col, this.row);
+            //console.log("bb");
+            isAction = true;
+        }
+        if (isAction == false) {
+            //console.log("cc");
+            this.walk();
+        }*/
+
+
     }
 
     getItem(i: Item.Item): boolean {
@@ -282,7 +344,6 @@ export class Person {
 export function createNPC(scene: Scene, type: number) {
     //var boxSize = { width: 0.2, height: 1, depth: 0.2 };
     //var mesh = MeshBuilder.CreateBox("box", boxSize);
-    //var animForward: AnimationGroup;
     var fileName = "Animated_Human.glb";
     var scale = 0.15;
     if (type == 2) {
@@ -305,7 +366,14 @@ export function createNPC(scene: Scene, type: number) {
         "", "" + "./glb/", fileName,
         scene, function (newMeshes) {
             var mesh = newMeshes[0];
+            mesh.name = "aaa";
             Main.meshArray.push(mesh);
+            var r = Main.getRand(1, 999);
+            mesh.name = "ssssssssss";
+            mesh.metadata = "sssss";
+            //mesh.metadata.name = "NPC:" + r;
+            mesh.isPickable = true;
+            //Main.boxArray.push(mesh);
             mesh.scaling = new Vector3(scale, scale, scale);
             var t = Main.getRand(1, Main.FirstTargetNums.length);
             var targetNum = Main.FirstTargetNums[t];
@@ -314,8 +382,6 @@ export function createNPC(scene: Scene, type: number) {
             p.setMesh(mesh);
             Main.persons.push(p);
             p.setMeshPosition(chip.col, chip.row, p.z);
-
-
 
             /*
                         var manager = new GUI.GUI3DManager(scene);

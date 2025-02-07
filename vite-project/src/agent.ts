@@ -48,15 +48,15 @@ export const generateMapCoordinate = async (map_create_prompt: string) => {
   });
 };
 
-/*
-const getNPCAction = async (map_create_prompt: string) => {
-    // OpenAIのモデルのインスタンスを作成
-    const chatModel = new ChatOpenAI({
-        openAIApiKey: openAIKey,
-        model: "gpt-3.5-turbo"
-    });
 
-    const template = `
+export const getNPCAction = async (field_of_vision_info: string) => {
+  // OpenAIのモデルのインスタンスを作成
+  const chatModel = new ChatOpenAI({
+    openAIApiKey: openAIKey,
+    model: "gpt-3.5-turbo"
+  });
+
+  const template = `
   条件:
       あなたはゲームのNPCです。あらかじめ与えられたマップの条件と、視野を元に、東西南北のどの方向に
       進めば良いかを意思決定してください。
@@ -107,22 +107,21 @@ const getNPCAction = async (map_create_prompt: string) => {
     視野から得られる情報：{field_of_vision_info}
 `;
 
-    // テンプレート文章にあるチェック対象の単語を変数化
-    const prompt = ChatPromptTemplate.fromMessages([
-        ["system", ""],
-        ["user", template],
-    ]);
+  // テンプレート文章にあるチェック対象の単語を変数化
+  const prompt = ChatPromptTemplate.fromMessages([
+    ["system", ""],
+    ["user", template],
+  ]);
 
-    // チャットメッセージを文字列に変換するための出力解析インスタンスを作成
-    const outputParser = new StringOutputParser();
+  // チャットメッセージを文字列に変換するための出力解析インスタンスを作成
+  const outputParser = new StringOutputParser();
 
-    // OpenAIのAPIにこのプロンプトを送信するためのチェーンを作成
-    const llmChain = prompt.pipe(chatModel).pipe(outputParser);
+  // OpenAIのAPIにこのプロンプトを送信するためのチェーンを作成
+  const llmChain = prompt.pipe(chatModel).pipe(outputParser);
 
-    // 関数を実行
-    return await llmChain.invoke({
-        field_of_vision_info: map_create_prompt,
-    });
+  // 関数を実行
+  return await llmChain.invoke({
+    field_of_vision_info: field_of_vision_info,
+  });
 };
 
-*/

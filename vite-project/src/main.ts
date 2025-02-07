@@ -7,10 +7,10 @@ import { Engine } from "@babylonjs/core/Engines/engine.js";
 //import { EnvironmentHelper } from "@babylonjs/core/Helpers/environmentHelper.js";
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight.js";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
-//import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder.js";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder.js";
 //import { MeshLoader } from "@babylonjs/core/Meshes/MeshLoader.js";
 //import { _OcclusionDataStorage, AbstractMesh, SceneLoader, Axis, Space } from "@babylonjs/core";
-import { _OcclusionDataStorage, AbstractMesh } from "@babylonjs/core";
+import { _OcclusionDataStorage, AbstractMesh, GPUPicker, PointerEventTypes } from "@babylonjs/core";
 
 import { Scene } from "@babylonjs/core/scene.js";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.js";
@@ -40,13 +40,13 @@ import * as NPC from './npc.ts';
 import * as Score from './score.ts';
 
 export var MAP_SIZE = 30;
-export var NPC_COUNT = 5;
-export var ENEMY_COUNT = 5;
-export var ITEM_COUNT = 15;
+export var NPC_COUNT = 20;
+export var ENEMY_COUNT = 30;
+export var ITEM_COUNT = 20;
 export var MAP_ARRAY: any[] = [];
-
-//export var boxArray: { dispose: () => void; }[] | Mesh[] = [];
 export var meshArray: { dispose: () => void; }[] | AbstractMesh[] = [];
+//export var boxArray: AbstractMesh[] = [];
+
 export var chipArray: {
   mesh: any;
   bid: number;
@@ -54,7 +54,7 @@ export var chipArray: {
 }[] = [];
 export var persons: NPC.Person[] = [];
 export var FirstTargetNums: any[] = [];
-
+export var spheres = [];
 const main = async () => {
 
   const app = document.querySelector<HTMLDivElement>("body");
@@ -103,6 +103,21 @@ const main = async () => {
   material.diffuseColor = Color3.FromHexString('#FBFBFB');
   ground.material = material
 
+  // Détection du clic
+  scene.onPointerObservable.add(function (pointerInfo) {
+    if (pointerInfo.type === PointerEventTypes.POINTERDOWN && pointerInfo.event.button === 0) { // Clic gauche
+      var pickResult = pointerInfo.pickInfo;
+      if (pickResult!.hit) {
+        // Récupérer le mesh sur lequel on a cliqué
+        var pickedMesh = pickResult!.pickedMesh;
+        console.log(pickedMesh?.name);
+        //var positionEnregistree = pickResult.pickedPoint; // Position du mesh
+        //positionText.text = `Position du mesh: (${positionEnregistree.x.toFixed(2)}, ${positionEnregistree.y.toFixed(2)}, ${positionEnregistree.z.toFixed(2)})`;
+        //scoreBlock.text = pickedMesh?.name;
+      }
+    }
+  });
+
   console.log("LLM thinking..");
   var isLLMFlag = 0;
   if (isLLMFlag == 1) {
@@ -115,6 +130,7 @@ const main = async () => {
   resetMap(scene);
 
   var stepId = 0;
+  var hogeId = 0;
   setInterval(function () {
     var humanCount = 0;
     var enemyCount = 0;
@@ -144,6 +160,10 @@ const main = async () => {
       }
     }
     stepId++;
+    hogeId++;
+    //if (stepId > 15) {
+    //picker.setPickingList(null);
+    //}
     if (stepId > 30) {
       stepId = 0;
       Map.growMap(scene);
@@ -151,9 +171,10 @@ const main = async () => {
       Score.setAnimalCount(enemyCount);
       var text = Score.getScoreText();
       scoreBlock.text = text;
+      //picker.setPickingList(boxArray);
+      //picker.setPickingList(spheres);
     }
-
-  }, 30 * 3);
+  }, 30 * 10);
 
   // Run render loop
   babylonEngine.runRenderLoop(() => {
@@ -171,15 +192,9 @@ export function orgFloor(value: number, base: number) {
 
 var mapid = 1;
 function resetMap(scene: Scene) {
-  /*
-  for (var i = 0; i < boxArray.length; i++) {
-    boxArray[i].dispose();
-  }
-    */
   for (var i = 0; i < meshArray.length; i++) {
     meshArray[i].dispose();
   }
-  //boxArray = [];
   meshArray = [];
   persons = [];
   Item.resetItem();

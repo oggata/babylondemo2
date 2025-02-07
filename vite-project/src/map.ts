@@ -63,6 +63,7 @@ export function addBox(type: number, bid: number, col: number, row: number, scen
     var box = MeshBuilder.CreateBox("box", { width: 1, height: objectHight, depth: 1 });
     box.position.x = col;
     box.position.z = row;
+    box.name = "xxxxx" + col;
     box.position.y = objectHight / 2;
     const b = {
         bid: bid,
